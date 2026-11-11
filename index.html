@@ -8,55 +8,100 @@
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <!-- HTML5 QR Code Scanner CDN -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <!-- QRCodeJS Library for In-App Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center p-4 transition-all">
 
   <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 my-4">
     
-    <!-- Language Selector Header -->
-    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
-      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">🌐 Language</span>
+    <!-- Top Controls: Language & View Mode Toggle -->
+    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-3 gap-2">
+      <!-- Language Selector -->
       <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none">
         <option value="en" selected>English</option>
         <option value="nl">Nederlands</option>
+        <option value="pl">Polski</option>
+        <option value="pap">Papiamento</option>
         <option value="tr">Türkçe</option>
-        <option value="ar">العربية (Standard Arabic)</option>
-        <option value="ary">الدارجة (Moroccan Arabic)</option>
+        <option value="ar">العربية</option>
+        <option value="ary">الدارجة</option>
       </select>
+
+      <!-- Tab Switcher (Scanner vs Generator) -->
+      <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
+        <button id="tabScannerBtn" onclick="switchTab('scanner')" class="text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition">📷 Scan</button>
+        <button id="tabGeneratorBtn" onclick="switchTab('generator')" class="text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition">🏷️ Generator</button>
+      </div>
     </div>
 
     <!-- App Header -->
     <header class="text-center mb-6">
-      <h1 id="t-app-title" class="text-xl font-bold text-emerald-700">🌱 Participatie Keuken</h1>
+      <h1 class="text-xl font-bold text-emerald-700">🌱 Participatie Keuken</h1>
       <p id="t-app-subtitle" class="text-xs text-slate-400 mt-1 font-medium">Shared Recipes</p>
-      <p id="t-app-desc" class="text-sm text-slate-500 mt-2">Scan produce QR codes to find matching recipes</p>
     </header>
 
-    <!-- QR Scanner Section -->
-    <div class="mb-6">
-      <div id="reader" class="w-full rounded-xl overflow-hidden border border-slate-200"></div>
-      <div id="scanned-result" class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 font-medium hidden">
-        <span id="t-scanned-label">Scanned Ingredient:</span> <span id="ingredient-name" class="font-bold underline"></span>
+    <!-- ================= VIEW 1: SCANNER & RECIPES ================= -->
+    <div id="viewScanner">
+      <p id="t-app-desc" class="text-sm text-slate-500 mb-4 text-center">Scan produce QR codes to find matching recipes</p>
+      
+      <!-- QR Scanner Section -->
+      <div class="mb-6">
+        <div id="reader" class="w-full rounded-xl overflow-hidden border border-slate-200"></div>
+        <div id="scanned-result" class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 font-medium hidden">
+          <span id="t-scanned-label">Scanned Ingredient:</span> <span id="ingredient-name" class="font-bold underline"></span>
+        </div>
       </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2 mb-6">
+        <button onclick="resetScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
+          <span id="t-btn-scan-again">🔄 Scan Again</span>
+        </button>
+        <button onclick="openModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
+          <span id="t-btn-propose">➕ Propose Recipe</span>
+        </button>
+      </div>
+
+      <!-- Recipe Results Section -->
+      <section>
+        <h2 id="t-heading-results" class="text-lg font-semibold mb-3 text-slate-700">Matching Recipes</h2>
+        <div id="recipe-list" class="space-y-4">
+          <p id="t-empty-state" class="text-slate-400 text-sm text-center py-6">Scan a produce QR code above to see recipes you can make!</p>
+        </div>
+      </section>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="flex gap-2 mb-6">
-      <button onclick="resetScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
-        <span id="t-btn-scan-again">🔄 Scan Again</span>
-      </button>
-      <button onclick="openModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
-        <span id="t-btn-propose">➕ Propose Recipe</span>
-      </button>
+    <!-- ================= VIEW 2: IN-APP QR GENERATOR ================= -->
+    <div id="viewGenerator" class="hidden">
+      <p id="t-gen-desc" class="text-sm text-slate-500 mb-4 text-center">Generate and print QR code labels for community wall produce</p>
+
+      <!-- Quick Preset Buttons -->
+      <div class="mb-4">
+        <p id="t-presets-label" class="text-xs font-semibold text-slate-400 uppercase mb-2">Quick Presets:</p>
+        <div class="flex flex-wrap justify-center gap-1.5">
+          <button onclick="setIngredient('Tomatoes')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Tomatoes</button>
+          <button onclick="setIngredient('Cucumbers')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Cucumbers</button>
+          <button onclick="setIngredient('Eggplant')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Eggplant</button>
+          <button onclick="setIngredient('Garlic')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Garlic</button>
+        </div>
+      </div>
+
+      <!-- Custom Input Field -->
+      <div class="mb-4 flex gap-2">
+        <input type="text" id="ingredientInput" placeholder="Type ingredient name..." value="Tomatoes" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+        <button onclick="generateQR()" id="t-gen-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition">Generate</button>
+      </div>
+
+      <!-- QR Display Box -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center mb-4">
+        <h3 id="labelDisplay" class="text-base font-bold text-slate-800 mb-3">Tomatoes</h3>
+        <div id="qrcode" class="bg-white p-2.5 rounded-lg shadow-sm"></div>
+      </div>
+
+      <button onclick="window.print()" id="t-print-btn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 rounded-xl text-sm transition">🖨️ Print Label</button>
     </div>
 
-    <!-- Recipe Results Section -->
-    <section>
-      <h2 id="t-heading-results" class="text-lg font-semibold mb-3 text-slate-700">Matching Recipes</h2>
-      <div id="recipe-list" class="space-y-4">
-        <p id="t-empty-state" class="text-slate-400 text-sm text-center py-6">Scan a produce QR code above to see recipes you can make!</p>
-      </div>
-    </section>
   </div>
 
   <!-- Proposal Modal -->
@@ -114,7 +159,13 @@
         btnSubmit: "Submit for Review",
         catMeal: "Meal",
         catConservation: "Conservation",
-        ingLabel: "Ingredients:"
+        ingLabel: "Ingredients:",
+        tabScan: "📷 Scan",
+        tabGen: "🏷️ Generator",
+        genDesc: "Generate and print QR code labels for community wall produce",
+        presetsLabel: "Quick Presets:",
+        genBtn: "Generate",
+        printBtn: "🖨️ Print Label"
       },
       nl: {
         dir: "ltr",
@@ -135,7 +186,67 @@
         btnSubmit: "Versturen voor controle",
         catMeal: "Maaltijd",
         catConservation: "Conserveren",
-        ingLabel: "Ingrediënten:"
+        ingLabel: "Ingrediënten:",
+        tabScan: "📷 Scan",
+        tabGen: "🏷️ Generator",
+        genDesc: "Genereer en print QR-code labels voor de gemeenschappelijke muur",
+        presetsLabel: "Snelle knoppen:",
+        genBtn: "Genereer",
+        printBtn: "🖨️ Label Printen"
+      },
+      pl: {
+        dir: "ltr",
+        appSubtitle: "Wspólne Przepisy",
+        appDesc: "Zeskanuj kod QR produktu, aby znaleźć pasujące przepisy",
+        scannedLabel: "Zeskanowany składnik:",
+        btnScanAgain: "🔄 Zeskanuj ponownie",
+        btnPropose: "➕ Zaproponuj przepis",
+        headingResults: "Pasujące przepisy",
+        emptyState: "Zeskanuj powyższy kod QR produktu, aby zobaczyć przepisy, które możesz przygotować!",
+        noMatch: "Nie znaleziono dokładnych przepisów dla",
+        modalTitle: "Zaproponuj nowy przepis",
+        labelTitle: "Tytuł przepisu",
+        labelIngredients: "Składniki (rozdzielone przecinkami)",
+        labelInstructions: "Instrukcje przygotowania",
+        labelEmail: "Twój adres e-mail",
+        btnCancel: "Anuluj",
+        btnSubmit: "Wyślij do zatwierdzenia",
+        catMeal: "Posiłek",
+        catConservation: "Przetwory",
+        ingLabel: "Składniki:",
+        tabScan: "📷 Skanuj",
+        tabGen: "🏷️ Generator",
+        genDesc: "Wygeneruj i wydrukuj etykiety z kodem QR dla produktów",
+        presetsLabel: "Szybkie wybory:",
+        genBtn: "Generuj",
+        printBtn: "🖨️ Drukuj etykietę"
+      },
+      pap: {
+        dir: "ltr",
+        appSubtitle: "Reseta Kompartí",
+        appDesc: "Skani kódigo QR di produkto pa haña reseta ku ta djis ku ne",
+        scannedLabel: "Ingrediente skaniá:",
+        btnScanAgain: "🔄 Skani Atrobe",
+        btnPropose: "➕ Proponé Reseta",
+        headingResults: "Reseta ku Ta Pas",
+        emptyState: "Skani un kódigo QR ariba pa wak kual reseta bo por traha!",
+        noMatch: "No a haña reseta exacto pa",
+        modalTitle: "Proponé un Reseta Nobo",
+        labelTitle: "Título di Reseta",
+        labelIngredients: "Ingrediente (separá ku kòma)",
+        labelInstructions: "Instrukshon",
+        labelEmail: "Bo Korreo Elektróniko",
+        btnCancel: "Kanselá",
+        btnSubmit: "Manda pa Rapidó",
+        catMeal: "Kualkier Kuminda",
+        catConservation: "Konserva",
+        ingLabel: "Ingrediente:",
+        tabScan: "📷 Skani",
+        tabGen: "🏷️ Kreador",
+        genDesc: "Generá i imprimi etiketa di kódigo QR pa produkto di muraya di komunidat",
+        presetsLabel: "Opcion Rápido:",
+        genBtn: "Generá",
+        printBtn: "🖨️ Imprimi Etiketa"
       },
       tr: {
         dir: "ltr",
@@ -156,7 +267,13 @@
         btnSubmit: "İncelemeye Gönder",
         catMeal: "Yemek",
         catConservation: "Konserve / Saklama",
-        ingLabel: "Malzemeler:"
+        ingLabel: "Malzemeler:",
+        tabScan: "📷 Tara",
+        tabGen: "🏷️ Oluşturucu",
+        genDesc: "Topluluk duvarı ürünleri için QR kod etiketleri oluşturun ve yazdırın",
+        presetsLabel: "Hızlı Seçim:",
+        genBtn: "Oluştur",
+        printBtn: "🖨️ Etiketi Yazdır"
       },
       ar: {
         dir: "rtl",
@@ -177,7 +294,13 @@
         btnSubmit: "إرسال للمراجعة",
         catMeal: "وجبة",
         catConservation: "حفظ وتخزين",
-        ingLabel: "المكونات:"
+        ingLabel: "المكونات:",
+        tabScan: "📷 مسح",
+        tabGen: "🏷️ مولد الرموز",
+        genDesc: "إنشاء وطباعة ملصقات QR لمنتجات حائط المجتمع",
+        presetsLabel: "اختصارات سريعة:",
+        genBtn: "توليد",
+        printBtn: "🖨️ طباعة الملصق"
       },
       ary: {
         dir: "rtl",
@@ -198,18 +321,34 @@
         btnSubmit: "صيفط للمراجعة",
         catMeal: "وجبة رئيسية",
         catConservation: "تصويب وتخزين",
-        ingLabel: "المقادير:"
+        ingLabel: "المقادير:",
+        tabScan: "📷 سكاني",
+        tabGen: "🏷️ توليد الكود",
+        genDesc: "صاوب وطبع ليزيكيت د QR للثلاجة أو الحائط التضامني",
+        presetsLabel: "خضرة جاهزة:",
+        genBtn: "صاوب",
+        printBtn: "🖨️ طبع الإيكيت"
       }
     };
 
     // 2. Multilingual Recipes Database
     const recipes = [
       {
-        title: { en: "Pickles", nl: "Augurken / Inmaken", tr: "Turşu", ar: "مخلل", ary: "مخلل (ترشي)" },
+        title: { 
+          en: "Pickles", 
+          nl: "Augurken / Inmaken", 
+          pl: "Ogórki kiszone / Konserwowe", 
+          pap: "Pikkel / Konserva", 
+          tr: "Turşu", 
+          ar: "مخلل", 
+          ary: "مخلل (ترشي)" 
+        },
         category: "Conservation",
         ingredients: {
           en: ["Cucumbers", "Vinegar", "Water", "Salt", "Garlic", "Dill"],
           nl: ["Komkommer", "Azijn", "Water", "Zout", "Knoflook", "Dille"],
+          pl: ["Ogórki", "Ocet", "Woda", "Sól", "Czosnek", "Koper"],
+          pap: ["Kukamber", "Binager", "Awa", "Salu", "Ajo", "Dill"],
           tr: ["Salatalık", "Sirke", "Su", "Tuz", "Sarımsak", "Dereotu"],
           ar: ["خيار", "خل", "ماء", "ملح", "ثوم", "شبت"],
           ary: ["خيار", "خل", "ما", "ملحة", "ثومة", "قزبور"]
@@ -217,17 +356,29 @@
         instructions: {
           en: "Boil vinegar, water, and salt. Pack cucumbers and garlic into jars, pour hot liquid over, and seal tightly.",
           nl: "Kook de azijn, het water en het zout. Vul potten met komkommer en knoflook, giet de hete vloeistof erover en sluit af.",
+          pl: "Zagotuj ocet, wodę i sól. Włóż ogórki i czosnek do słoików, zalej gorącym płynem i szczelnie zamknij.",
+          pap: "Bulbin binager, awa i salu. Pone kukamber i ajo den fras, basha likido kayente riba dje i sera bon kibrá.",
           tr: "Sirke, su ve tuzu kaynatın. Salatalık ve sarımsakları kavanozlara doldurun, üzerine sıcak sıvıyı döküp sıkıca kapatın.",
           ar: "اغلي الخل والماء والملح. ضع الخيار والثوم في برطمانات، وصب السائل الساخن فوقها وأغلقها بإحكام.",
           ary: "غلي الخل والما والملحة. دير الخيار والثومة فقرعات د الزجاج، كب عليهم الخليط سخون وسد القرعة مزيان."
         }
       },
       {
-        title: { en: "Tomato Sauce", nl: "Tomatensaus", tr: "Domates Sosu", ar: "صلصة طماطم", ary: "لاصوص د الطماطيش" },
+        title: { 
+          en: "Tomato Sauce", 
+          nl: "Tomatensaus", 
+          pl: "Sos pomidorowy", 
+          pap: "Salsa di Tomati", 
+          tr: "Domates Sosu", 
+          ar: "صلصة طماطم", 
+          ary: "لاصوص د الطماطيش" 
+        },
         category: "Conservation",
         ingredients: {
           en: ["Tomatoes", "Olive Oil", "Garlic", "Onion", "Salt", "Basil"],
           nl: ["Tomaten", "Olijfolie", "Knoflook", "Ui", "Zout", "Basilicum"],
+          pl: ["Pomidory", "Oliwa z oliwek", "Czosnek", "Cebula", "Sól", "Bazylia"],
+          pap: ["Tomati", "Oliwa di Oliv", "Ajo", "Koyo", "Salu", "Basilchi"],
           tr: ["Domates", "Zeytinyağı", "Sarımsak", "Soğan", "Tuz", "Fesleğen"],
           ar: ["طماطم", "زيت زيتون", "ثوم", "بصل", "ملح", "حبق"],
           ary: ["طماطيش", "زيت البلدية", "ثومة", "بصلة", "ملحة", "حبق"]
@@ -235,17 +386,29 @@
         instructions: {
           en: "Simmer crushed tomatoes with sautéed garlic and onion for 45 mins. Blend until smooth and store.",
           nl: "Laat geplette tomaten met gefruite knoflook en ui 45 minuten sudderen. Pureer tot een gladde saus.",
+          pl: "Gotuj rozgniecione pomidory z podsmażonym czosnkiem i cebulą przez 45 minut. Zblenduj na gładko i przechowuj.",
+          pap: "Simmer tomati crush ku ajo i koyo sofria pa 45 minüt. Blend te ora e ta suave i warda.",
           tr: "Ezilmiş domatesleri soteelenmiş sarımsak ve soğanla 45 dakika kısık ateşte pişirin. Pürüzsüz olana kadar karıştırın.",
           ar: "اترك الطماطم المهروسة تطهى على نار هادئة مع الثوم والبصل المحمر لمدة 45 دقيقة. اخلطها حتى تصبح ناعمة.",
           ary: "طيب الطماطيش مطحونة مع الثومة والبصلة في الزيت لمدة 45 دقيقة. طحن كلشي مزيان ونقصها فقرعات."
         }
       },
       {
-        title: { en: "Pasta alla Norma", nl: "Pasta alla Norma", tr: "Patlıcanlı Makarna", ar: "باستا بالباذنجان", ary: "باستا بالدنجال" },
+        title: { 
+          en: "Pasta alla Norma", 
+          nl: "Pasta alla Norma", 
+          pl: "Pasta alla Norma", 
+          pap: "Pasta alla Norma", 
+          tr: "Patlıcanlı Makarna", 
+          ar: "باستا بالباذنجان", 
+          ary: "باستا بالدنجال" 
+        },
         category: "Meal",
         ingredients: {
           en: ["Pasta", "Eggplant", "Tomatoes", "Garlic", "Cheese", "Basil"],
           nl: ["Pasta", "Aubergine", "Tomaten", "Knoflook", "Kaas", "Basilicum"],
+          pl: ["Makaron", "Bakłażan", "Pomidory", "Czosnek", "Ser", "Bazylia"],
+          pap: ["Pasta", "Berenzenchi", "Tomati", "Ajo", "Keso", "Basilchi"],
           tr: ["Makarna", "Patlıcan", "Domates", "Sarımsak", "Peynir", "Fesleğen"],
           ar: ["معكرونة", "باذنجان", "طماطم", "ثوم", "جبن", "حبق"],
           ary: ["مقرونية", "دنجال", "طماطيش", "ثومة", "فرماج", "حبق"]
@@ -253,6 +416,8 @@
         instructions: {
           en: "Fry cubed eggplant. Make a basic garlic tomato sauce. Toss cooked pasta with sauce, top with fried eggplant and cheese.",
           nl: "Bak blokjes aubergine. Maak een knoflook-tomatensaus. Meng de gekookte pasta met saus en voeg aubergine en kaas toe.",
+          pl: "Usmaż pokrojonego w kostkę bakłażana. Zrób prosty sos pomidorowy z czosnkiem. Wymieszaj ugotowany makaron z sosem, posyp smażonym bakłażanem i serem.",
+          pap: "Fray berenzenchi na kùbi. Traha un salsa di tomati simpel ku ajo. Miskla pasta kushiná ku salsa, pone berenzenchi fritá i keso riba dje.",
           tr: "Küp şeklinde doğranmış patlıcanları kızartın. Domates ve sarımsaklı sos hazırlayın. Makarnayı sosla karıştırıp servis edin.",
           ar: "اقلي مكعبات الباذنجان. حضر صلصة طماطم وثوم بسيطة. اخلط المعكرونة المطبوخة مع الصلصة وقم بتزيينها بالباذنجان والجبن.",
           ary: "قلي الدنجال مربعات. صاوب لاصوص طماطيش بالثومة. خلط المقرونية مع لاصوص وزيد الدنجال مقلي والفرماج من الفوق."
@@ -262,6 +427,7 @@
 
     let currentLang = "en";
     let lastScannedItem = "";
+    let qrCodeInst = null;
 
     function changeLanguage(lang) {
       currentLang = lang;
@@ -283,12 +449,65 @@
       document.getElementById("t-label-email").innerText = t.labelEmail;
       document.getElementById("t-btn-cancel").innerText = t.btnCancel;
       document.getElementById("t-btn-submit").innerText = t.btnSubmit;
+      document.getElementById("tabScannerBtn").innerText = t.tabScan;
+      document.getElementById("tabGeneratorBtn").innerText = t.tabGen;
+      document.getElementById("t-gen-desc").innerText = t.genDesc;
+      document.getElementById("t-presets-label").innerText = t.presetsLabel;
+      document.getElementById("t-gen-btn").innerText = t.genBtn;
+      document.getElementById("t-print-btn").innerText = t.printBtn;
 
       if (lastScannedItem) {
         filterRecipes(lastScannedItem);
       } else {
         document.getElementById("recipe-list").innerHTML = `<p class="text-slate-400 text-sm text-center py-6">${t.emptyState}</p>`;
       }
+    }
+
+    function switchTab(tab) {
+      const scannerView = document.getElementById("viewScanner");
+      const generatorView = document.getElementById("viewGenerator");
+      const scanBtn = document.getElementById("tabScannerBtn");
+      const genBtn = document.getElementById("tabGeneratorBtn");
+
+      if (tab === 'scanner') {
+        scannerView.classList.remove("hidden");
+        generatorView.classList.add("hidden");
+        scanBtn.className = "text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
+        genBtn.className = "text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition";
+      } else {
+        scannerView.classList.add("hidden");
+        generatorView.classList.remove("hidden");
+        genBtn.className = "text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
+        scanBtn.className = "text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition";
+        
+        // Initialize generator preview if not already done
+        if (!qrCodeInst) {
+          qrCodeInst = new QRCode(document.getElementById("qrcode"), {
+            text: "Tomatoes",
+            width: 180,
+            height: 180,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        }
+      }
+    }
+
+    function generateQR() {
+      const val = document.getElementById("ingredientInput").value.trim();
+      if (val) {
+        document.getElementById("labelDisplay").innerText = val;
+        if (qrCodeInst) {
+          qrCodeInst.clear();
+          qrCodeInst.makeCode(val);
+        }
+      }
+    }
+
+    function setIngredient(name) {
+      document.getElementById("ingredientInput").value = name;
+      generateQR();
     }
 
     function onScanSuccess(decodedText, decodedResult) {
