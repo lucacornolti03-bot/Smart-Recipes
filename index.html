@@ -1,766 +1,358 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Recipes</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse for fast Google Sheets CSV parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f7ff',
-                            100: '#e0effe',
-                            200: '#bae0fd',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        arabic: ['Cairo', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
-            min-height: 100vh;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #93c5fd;
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #60a5fa;
-        }
-        .recipe-card {
-            transition: all 0.25s ease-in-out;
-        }
-        .recipe-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Participatie Keuken Shared Recipes</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- HTML5 QR Code Scanner CDN -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
-<body class="font-sans text-slate-800 antialiased p-3 sm:p-6 md:p-8">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center p-4 transition-all">
 
-    <div class="max-w-6xl mx-auto">
-        <!-- HEADER BAR -->
-        <header class="bg-white/90 backdrop-blur-md rounded-2xl p-5 sm:p-6 shadow-md border border-white/80 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-400 text-white flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-blue-500/30 shrink-0">
-                    <i class="fa-solid fa-utensils"></i>
-                </div>
-                <div>
-                    <h1 id="app-title" class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                        Smart Recipes
-                    </h1>
-                    <p id="app-subtitle" class="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-                        Discover delicious meals and conservation recipes based on live inventory
-                    </p>
-                </div>
-            </div>
-
-            <!-- Language & Live Sync Indicator -->
-            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                <!-- Live Sync Status Pill -->
-                <div id="sync-status" class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-xs">
-                    <span class="relative flex h-2.5 w-2.5">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                    </span>
-                    <span id="sync-status-text">Live Google Sheet Synced</span>
-                </div>
-
-                <!-- Language Selector -->
-                <div class="relative w-full sm:w-auto">
-                    <div class="flex items-center bg-white border border-slate-300 rounded-xl px-3 py-2 shadow-xs focus-within:ring-2 focus-within:ring-blue-500">
-                        <i class="fa-solid fa-globe text-slate-400 me-2 text-sm"></i>
-                        <select id="language-selector" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none cursor-pointer w-full">
-                            <option value="en">English</option>
-                            <option value="nl">Nederlands</option>
-                            <option value="es">Español</option>
-                            <option value="ar">العربية</option>
-                            <option value="tr">Türkçe</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- MAIN LAYOUT GRID -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            <!-- LEFT COLUMN: INGREDIENTS SELECTION -->
-            <section class="lg:col-span-5 flex flex-col gap-4">
-                
-                <div class="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60 flex flex-col h-full">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 id="heading-ingredients" class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-basket-shopping text-blue-600"></i>
-                            Select Stock Ingredients
-                        </h2>
-                        <span id="selected-count-badge" class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                            0 selected
-                        </span>
-                    </div>
-
-                    <!-- Search Bar -->
-                    <div class="relative mb-3">
-                        <i class="fa-solid fa-magnifying-glass absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-                        <input type="text" id="ingredient-search" placeholder="Search ingredient..." 
-                            class="w-full ps-10 pe-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all">
-                        <button id="clear-search-btn" class="hidden absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm p-1">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <!-- Filter / Quick Action Bar -->
-                    <div class="flex items-center justify-between mb-3 text-xs">
-                        <span id="available-stock-lbl" class="text-slate-500 font-medium">Available in food bank:</span>
-                        <button id="btn-clear-selection" class="text-red-500 hover:text-red-700 font-semibold flex items-center gap-1 transition-colors">
-                            <i class="fa-solid fa-rotate-left text-xs"></i>
-                            <span id="btn-clear-txt">Reset</span>
-                        </button>
-                    </div>
-
-                    <!-- Ingredients List Box -->
-                    <div id="ingredients-list-container" class="flex-1 max-h-[420px] overflow-y-auto pe-1 space-y-1.5 min-h-[220px]">
-                        <!-- Dynamic Checkboxes Inserted Here -->
-                    </div>
-
-                    <!-- Live Data Note -->
-                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
-                        <span id="excel-format-note" class="flex items-center gap-1">
-                            <i class="fa-solid fa-rotate text-blue-500 animate-spin text-[10px]"></i>
-                            Auto-synced with Google Sheet
-                        </span>
-                    </div>
-                </div>
-
-            </section>
-
-            <!-- RIGHT COLUMN: RECIPE RESULTS -->
-            <section class="lg:col-span-7 flex flex-col gap-4">
-
-                <div class="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60">
-                    
-                    <!-- Recipe Filter Tabs & Header -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-100 pb-4">
-                        <div>
-                            <h2 id="heading-recipes" class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                <i class="fa-solid fa-book-open-reader text-blue-600"></i>
-                                Available Recipes
-                            </h2>
-                            <p id="subheading-recipes" class="text-xs text-slate-500 mt-0.5">
-                                Ordered automatically by ingredient match
-                            </p>
-                        </div>
-
-                        <!-- Recipe Type Tabs (All / Meal / Conservation) -->
-                        <div class="flex bg-slate-100 p-1 rounded-xl self-start sm:self-auto text-xs font-semibold">
-                            <button id="tab-all" class="recipe-tab active bg-white text-blue-600 shadow-xs px-3 py-1.5 rounded-lg transition-all">
-                                <span id="lbl-tab-all">All</span>
-                            </button>
-                            <button id="tab-meal" class="recipe-tab text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg transition-all">
-                                <i class="fa-solid fa-bowl-food me-1 text-amber-500"></i>
-                                <span id="lbl-tab-meal">Meal</span>
-                            </button>
-                            <button id="tab-conservation" class="recipe-tab text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg transition-all">
-                                <i class="fa-solid fa-jar me-1 text-emerald-500"></i>
-                                <span id="lbl-tab-conservation">Conservation</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Recipe Cards Container -->
-                    <div id="recipes-list-container" class="space-y-4">
-                        <!-- Dynamic Recipes Rendered Here -->
-                    </div>
-
-                </div>
-
-            </section>
-
-        </div>
+  <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 my-4">
+    
+    <!-- Language Selector Header -->
+    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">🌐 Language</span>
+      <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+        <option value="en" selected>English</option>
+        <option value="nl">Nederlands</option>
+        <option value="tr">Türkçe</option>
+        <option value="ar">العربية (Standard Arabic)</option>
+        <option value="ary">الدارجة (Moroccan Arabic)</option>
+      </select>
     </div>
 
-    <!-- APPLICATION LOGIC -->
-    <script>
-        // --- TRANSLATIONS DICTIONARY ---
-        const translations = {
-            en: {
-                appTitle: "Smart Recipes",
-                appSubtitle: "Discover delicious meals and conservation recipes based on live inventory",
-                syncStatus: "Live Google Sheet Synced",
-                headingIngredients: "Select Stock Ingredients",
-                searchPlaceholder: "Search ingredient...",
-                availableStock: "Available in food bank:",
-                btnReset: "Reset",
-                selectedBadge: "{count} selected",
-                headingRecipes: "Available Recipes",
-                subheadingRecipes: "Ordered automatically by highest ingredient match",
-                tabAll: "All Recipes",
-                tabMeal: "Meal Recipes",
-                tabConservation: "Conservation Recipes",
-                excelNote: "Auto-synced with Google Sheet",
-                matchBadge: "{matched} of {total} items ({pct}%)",
-                categoryMeal: "Meal",
-                categoryConservation: "Conservation",
-                noIngredientsFound: "No ingredients found matching your search.",
-                noRecipesFound: "No matching recipes found. Select more ingredients on the left!",
-                ingredientsNeeded: "Required ingredients:",
-                instructions: "Preparation Instructions:"
-            },
-            nl: {
-                appTitle: "Smart Recipes",
-                appSubtitle: "Ontdek maaltijden en conserveringsrecepten op basis van de live voorraad",
-                syncStatus: "Live Google Sheet Gesynchroniseerd",
-                headingIngredients: "Selecteer Beschikbare Ingrediënten",
-                searchPlaceholder: "Zoek ingrediënt...",
-                availableStock: "Beschikbaar in de voedselbank:",
-                btnReset: "Herstellen",
-                selectedBadge: "{count} geselecteerd",
-                headingRecipes: "Beschikbare Recepten",
-                subheadingRecipes: "Automatisch gesorteerd op hoogste match met voorraad",
-                tabAll: "Alle Recepten",
-                tabMeal: "Maaltijden",
-                tabConservation: "Conservering",
-                excelNote: "Automatisch gesynchroniseerd met Google Sheet",
-                matchBadge: "{matched} van {total} items ({pct}%)",
-                categoryMeal: "Maaltijd",
-                categoryConservation: "Conservering",
-                noIngredientsFound: "Geen ingrediënten gevonden voor uw zoekopdracht.",
-                noRecipesFound: "Geen passende recepten gevonden. Selecteer meer ingrediënten aan de linkerkant!",
-                ingredientsNeeded: "Benodigde ingrediënten:",
-                instructions: "Bereidingswijze:"
-            },
-            es: {
-                appTitle: "Smart Recipes",
-                appSubtitle: "Descubra recetas de comidas y conservación basadas en el inventario en vivo",
-                syncStatus: "Google Sheet Sincronizado",
-                headingIngredients: "Seleccionar Ingredientes",
-                searchPlaceholder: "Buscar ingrediente...",
-                availableStock: "Disponible en el banco de alimentos:",
-                btnReset: "Restablecer",
-                selectedBadge: "{count} seleccionados",
-                headingRecipes: "Recetas Disponibles",
-                subheadingRecipes: "Ordenadas automáticamente según los ingredientes disponibles",
-                tabAll: "Todas",
-                tabMeal: "Comida",
-                tabConservation: "Preservación",
-                excelNote: "Sincronizado automáticamente con Google Sheet",
-                matchBadge: "{matched} de {total} items ({pct}%)",
-                categoryMeal: "Comida",
-                categoryConservation: "Preservación",
-                noIngredientsFound: "No se encontraron ingredientes con ese nombre.",
-                noRecipesFound: "No se encontraron recetas. ¡Seleccione más ingredientes a la izquierda!",
-                ingredientsNeeded: "Ingredientes necesarios:",
-                instructions: "Instrucciones de preparación:"
-            },
-            ar: {
-                appTitle: "Smart Recipes",
-                appSubtitle: "اكتشف الوجبات وصفات التخزين تلقائيًا من مخزون Google Sheet المباشر",
-                syncStatus: "محدث مباشر مع Google Sheet",
-                headingIngredients: "حدد المكونات المتوفرة",
-                searchPlaceholder: "ابحث عن مكون...",
-                availableStock: "المتوفر في بنك الطعام:",
-                btnReset: "إعادة ضبط",
-                selectedBadge: "{count} محدد",
-                headingRecipes: "الوصفات المتاحة",
-                subheadingRecipes: "مرتبة تلقائيًا حسب أعلى نسبة تطابق للمكونات",
-                tabAll: "جميع الوصفات",
-                tabMeal: "وجبات",
-                tabConservation: "حفظ وتخزين",
-                excelNote: "محدث تلقائيًا مع Google Sheet",
-                matchBadge: "{matched} من {total} ({pct}%)",
-                categoryMeal: "وجبة",
-                categoryConservation: "حفظ وتخزين",
-                noIngredientsFound: "لم يتم العثور على مكونات تطابق بحثك.",
-                noRecipesFound: "لم يتم العثور على وصفات مطابقة. اختر المزيد من المكونات من القائمة!",
-                ingredientsNeeded: "المكونات المطلوبة:",
-                instructions: "طريقة التحضير:"
-            },
-            tr: {
-                appTitle: "Smart Recipes",
-                appSubtitle: "Canlı stok verilerine göre harika yemek ve konserve tariflerini keşfedin",
-                syncStatus: "Canlı Google Sheet Senkronize",
-                headingIngredients: "Mevcut Malzemeleri Seçin",
-                searchPlaceholder: "Malzeme ara...",
-                availableStock: "Gıda bankasında mevcut:",
-                btnReset: "Sıfırla",
-                selectedBadge: "{count} seçildi",
-                headingRecipes: "Mevcut Tarifler",
-                subheadingRecipes: "En yüksek malzeme eşleşmesine göre otomatik sıralanır",
-                tabAll: "Tüm Tarifler",
-                tabMeal: "Yemek",
-                tabConservation: "Konserve / Saklama",
-                excelNote: "Google Sheet ile otomatik senkronize",
-                matchBadge: "{matched} / {total} ürün ({pct}%)",
-                categoryMeal: "Yemek",
-                categoryConservation: "Konserve",
-                noIngredientsFound: "Aramanıza uygun malzeme bulunamadı.",
-                noRecipesFound: "Uygun tarif bulunamadı. Soldan daha fazla malzeme seçin!",
-                ingredientsNeeded: "Gerekli malzemeler:",
-                instructions: "Hazırlanışı:"
-            }
-        };
+    <!-- App Header -->
+    <header class="text-center mb-6">
+      <h1 id="t-app-title" class="text-xl font-bold text-emerald-700">🌱 Participatie Keuken</h1>
+      <p id="t-app-subtitle" class="text-xs text-slate-400 mt-1 font-medium">Shared Recipes</p>
+      <p id="t-app-desc" class="text-sm text-slate-500 mt-2">Scan produce QR codes to find matching recipes</p>
+    </header>
 
-        // --- GOOGLE SHEET CONFIGURATION ---
-        const SHEET_ID = '1OjEQllKuUNVXxs98O6Ln0g6tq5LyXQztP0AnwUR2YCU';
-        const INGREDIENTS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Ingredients`;
-        const RECIPES_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Recipes`;
-        const SYNC_INTERVAL_MS = 15000;
+    <!-- QR Scanner Section -->
+    <div class="mb-6">
+      <div id="reader" class="w-full rounded-xl overflow-hidden border border-slate-200"></div>
+      <div id="scanned-result" class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 font-medium hidden">
+        <span id="t-scanned-label">Scanned Ingredient:</span> <span id="ingredient-name" class="font-bold underline"></span>
+      </div>
+    </div>
 
-        // --- PREPOPULATED FALLBACK DATA ---
-        const defaultDataset = {
-            ingredients: [
-                { id: "tomatoes", name: { en: "Tomatoes", nl: "Tomaten", es: "Tomates", ar: "طماطم", tr: "Domates" } },
-                { id: "eggplant", name: { en: "Eggplant", nl: "Auberginen", es: "Berenjena", ar: "باذنجان", tr: "Patlıcan" } },
-                { id: "cucumbers", name: { en: "Cucumbers", nl: "Komkommers", es: "Pepinos", ar: "خيار", tr: "Salatalık" } },
-                { id: "garlic", name: { en: "Garlic", nl: "Knoflook", es: "Ajo", ar: "ثوم", tr: "Sarımsak" } },
-                { id: "onion", name: { en: "Onion", nl: "Ui", es: "Cebolla", ar: "بصل", tr: "Soğan" } },
-                { id: "bacon", name: { en: "Bacon", nl: "Spek", es: "Tocino", ar: "لحم قديد", tr: "Pastırma" } },
-                { id: "cheese", name: { en: "Cheese", nl: "Kaas", es: "Queso", ar: "جبن", tr: "Peynir" } }
-            ],
-            recipes: [
-                {
-                    id: "rec_1",
-                    category: "Conservation",
-                    title: { en: "Pickles", nl: "Ingelegde Komkommers", es: "Pepinillos en Conserva", ar: "مخلل خيار", tr: "Salatalık Turşusu" },
-                    ingredients: ["cucumbers", "garlic"],
-                    instructions: {
-                        en: "Boil vinegar, water, and salt. Place cucumbers and garlic into jar, pour warm mixture over them and seal tight.",
-                        nl: "Kook azijn, water en zout. Doe komkommers en knoflook in een pot, giet het warme mengsel erover en sluit af.",
-                        es: "Herva vinagre, agua y sal. Coloque pepinos y ajo en el frasco, vierta la mezcla tibia y selle bien.",
-                        ar: "اغلِ الخل والماء والملح. ضع الخيار والثوم في برطمان، وصب الخليط الدافئ فوقهما وأغلقه بإحكام.",
-                        tr: "Sirke, su ve tuzu kaynatın. Salatalıkları ve sarımsakları kavronaza koyun, ılık karışımı döküp sıkıca kapatın."
-                    }
-                },
-                {
-                    id: "rec_2",
-                    category: "Conservation",
-                    title: { en: "Tomato Sauce", nl: "Tomatensaus", es: "Salsa de Tomate", ar: "صلصة طماطم", tr: "Domates Sosu" },
-                    ingredients: ["tomatoes", "garlic", "onion"],
-                    instructions: {
-                        en: "Brown onions and garlic, add diced tomatoes, simmer for 30 minutes until thick. Can be preserved in glass jars.",
-                        nl: "Fruit uien en knoflook, voeg gesneden tomaten toe, laat 30 minuten pruttelen tot een dikke saus.",
-                        es: "Dorar cebollas y ajo, agregar tomates picados, cocinar a fuego lento durante 30 minutos hasta que espese.",
-                        ar: "حمر البصل والثوم، أضف الطماطم المقطعة، واتركها على نار هادئة لمدة 30 دقيقة حتى تتكاثف.",
-                        tr: "Soğan ve sarımsakları kavurun, doğranmış domatesleri ekleyin, koyulaşana kadar 30 dakika kısık ateşte pişirin."
-                    }
-                },
-                {
-                    id: "rec_3",
-                    category: "Meal",
-                    title: { en: "Amatriciana", nl: "Pasta Amatriciana", es: "Pasta Amatriciana", ar: "باستا أمتريتشانا", tr: "Amatriciana Makarnası" },
-                    ingredients: ["tomatoes", "bacon", "cheese", "onion"],
-                    instructions: {
-                        en: "Crisp the bacon, stir in onions and tomatoes, simmer into a rich sauce, and serve tossed with pasta and cheese.",
-                        nl: "Bak het spek knapperig, voeg uien en tomaten toe, laat een rijke saus worden en serveer met pasta en kaas.",
-                        es: "Dore el tocino, agregue cebollas y tomates, cocine a fuego lento y sirva mezclado con pasta y queso.",
-                        ar: "حمر اللحم، أضف البصل والطماطم، اتركها تتكثف ثم قدمها مع المعكرونة والجبن.",
-                        tr: "Pastırmayı çıtırlaştırın, soğan ve domatesleri ekleyip pişirin, makarna ve peynir ile servis yapın."
-                    }
-                },
-                {
-                    id: "rec_4",
-                    category: "Meal",
-                    title: { en: "Pasta Alla Norma", nl: "Pasta Alla Norma", es: "Pasta Alla Norma", ar: "باستا ألا نورما", tr: "Pasta Alla Norma" },
-                    ingredients: ["tomatoes", "eggplant", "garlic", "cheese"],
-                    instructions: {
-                        en: "Sauté sliced eggplant until golden. Prepare garlic tomato sauce, mix with pasta, eggplant, and top with grated cheese.",
-                        nl: "Bak aubergine goudbruin. Maak knoflook-tomatensaus, meng met pasta, aubergine en bestrooi met kaas.",
-                        es: "Saltee berenjenas hasta dorar. Prepare salsa de tomate y ajo, mezcle con pasta, berenjena y queso.",
-                        ar: "اقلِ الباذنجان حتى يصبح ذهبياً. حضر صلصة الطماطم والثوم، واخلطها مع المعكرونة والجبن.",
-                        tr: "Patlıcanları kızartın. Sarımsaklı domates sosu hazırlayıp makarna, patlıcan ve rendelenmiş peynir ile birleştirin."
-                    }
-                }
-            ]
-        };
+    <!-- Action Buttons -->
+    <div class="flex gap-2 mb-6">
+      <button onclick="resetScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
+        <span id="t-btn-scan-again">🔄 Scan Again</span>
+      </button>
+      <button onclick="openModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
+        <span id="t-btn-propose">➕ Propose Recipe</span>
+      </button>
+    </div>
 
-        // --- APP STATE ---
-        let currentLang = "en";
-        let currentCategoryFilter = "all"; 
-        let selectedIngredients = new Set();
-        let ingredientsData = [...defaultDataset.ingredients];
-        let recipesData = [...defaultDataset.recipes];
+    <!-- Recipe Results Section -->
+    <section>
+      <h2 id="t-heading-results" class="text-lg font-semibold mb-3 text-slate-700">Matching Recipes</h2>
+      <div id="recipe-list" class="space-y-4">
+        <p id="t-empty-state" class="text-slate-400 text-sm text-center py-6">Scan a produce QR code above to see recipes you can make!</p>
+      </div>
+    </section>
+  </div>
 
-        // --- DOM ELEMENTS ---
-        const langSelect = document.getElementById('language-selector');
-        const ingredientSearch = document.getElementById('ingredient-search');
-        const clearSearchBtn = document.getElementById('clear-search-btn');
-        const ingredientsContainer = document.getElementById('ingredients-list-container');
-        const recipesContainer = document.getElementById('recipes-list-container');
-        const selectedCountBadge = document.getElementById('selected-count-badge');
-        const btnClearSelection = document.getElementById('btn-clear-selection');
-        const syncStatusText = document.getElementById('sync-status-text');
+  <!-- Proposal Modal -->
+  <div id="proposalModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 relative">
+      <h3 id="t-modal-title" class="text-xl font-bold text-slate-800 mb-4">Propose a New Recipe</h3>
+      
+      <form action="https://api.web3forms.com/submit" method="POST" class="space-y-4">
+        <input type="hidden" name="apikey" value="YOUR_WEB3FORMS_ACCESS_KEY">
+        
+        <div>
+          <label id="t-label-title" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Recipe Title</label>
+          <input type="text" name="title" required class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+        </div>
+        <div>
+          <label id="t-label-ingredients" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ingredients (comma separated)</label>
+          <input type="text" name="ingredients" required class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+        </div>
+        <div>
+          <label id="t-label-instructions" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Instructions</label>
+          <textarea name="instructions" rows="3" required class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+        </div>
+        <div>
+          <label id="t-label-email" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Your Email</label>
+          <input type="email" name="email" required class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+        </div>
 
-        // Category Tabs
-        const tabAll = document.getElementById('tab-all');
-        const tabMeal = document.getElementById('tab-meal');
-        const tabConservation = document.getElementById('tab-conservation');
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeModal()" id="t-btn-cancel" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 rounded-xl text-sm">Cancel</button>
+          <button type="submit" id="t-btn-submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-xl text-sm">Submit for Review</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-        // --- INITIALIZATION ---
-        window.addEventListener('DOMContentLoaded', () => {
-            updateLanguage(currentLang);
-            renderIngredients();
-            renderRecipes();
-            setupEventListeners();
-            
-            // Fetch live Google Sheet data
-            fetchGoogleSheetData();
-            setInterval(fetchGoogleSheetData, SYNC_INTERVAL_MS);
-        });
+  <script>
+    // 1. Interface Translations Dictionary
+    const translations = {
+      en: {
+        dir: "ltr",
+        appSubtitle: "Shared Recipes",
+        appDesc: "Scan produce QR codes to find matching recipes",
+        scannedLabel: "Scanned Ingredient:",
+        btnScanAgain: "🔄 Scan Again",
+        btnPropose: "➕ Propose Recipe",
+        headingResults: "Matching Recipes",
+        emptyState: "Scan a produce QR code above to see recipes you can make!",
+        noMatch: "No exact recipes found for",
+        modalTitle: "Propose a New Recipe",
+        labelTitle: "Recipe Title",
+        labelIngredients: "Ingredients (comma separated)",
+        labelInstructions: "Instructions",
+        labelEmail: "Your Email",
+        btnCancel: "Cancel",
+        btnSubmit: "Submit for Review",
+        catMeal: "Meal",
+        catConservation: "Conservation",
+        ingLabel: "Ingredients:"
+      },
+      nl: {
+        dir: "ltr",
+        appSubtitle: "Gedeelde Recepten",
+        appDesc: "Scan een QR-code om passende recepten te vinden",
+        scannedLabel: "Gescand ingrediënt:",
+        btnScanAgain: "🔄 Opnieuw Scannen",
+        btnPropose: "➕ Recept Voorstellen",
+        headingResults: "Passende Recepten",
+        emptyState: "Scan een QR-code hierboven om recepten te zien!",
+        noMatch: "Geen recepten gevonden voor",
+        modalTitle: "Stel een nieuw recept voor",
+        labelTitle: "Titel van recept",
+        labelIngredients: "Ingrediënten (door komma's gescheiden)",
+        labelInstructions: "Bereidingswijze",
+        labelEmail: "Jouw E-mailadres",
+        btnCancel: "Annuleren",
+        btnSubmit: "Versturen voor controle",
+        catMeal: "Maaltijd",
+        catConservation: "Conserveren",
+        ingLabel: "Ingrediënten:"
+      },
+      tr: {
+        dir: "ltr",
+        appSubtitle: "Paylaşılan Tarifler",
+        appDesc: "Uygun tarifleri bulmak için QR kodunu tarayın",
+        scannedLabel: "Taranan Malzeme:",
+        btnScanAgain: "🔄 Tekrar Tara",
+        btnPropose: "➕ Tarif Öner",
+        headingResults: "Uygun Tarifler",
+        emptyState: "Yapabileceğiniz tarifleri görmek için yukarıdaki QR kodunu tarayın!",
+        noMatch: "Şunun için tarif bulunamadı:",
+        modalTitle: "Yeni Bir Tarif Önerin",
+        labelTitle: "Tarif Başlığı",
+        labelIngredients: "Malzemeler (virgülle ayrılmış)",
+        labelInstructions: "Hazırlanışı",
+        labelEmail: "E-posta Adresiniz",
+        btnCancel: "İptal",
+        btnSubmit: "İncelemeye Gönder",
+        catMeal: "Yemek",
+        catConservation: "Konserve / Saklama",
+        ingLabel: "Malzemeler:"
+      },
+      ar: {
+        dir: "rtl",
+        appSubtitle: "الوصفات المشتركة",
+        appDesc: "امسح رمز QR الخاص بالمنتج للعثور على وصفات مناسبة",
+        scannedLabel: "المكون الممسوح:",
+        btnScanAgain: "🔄 المسح مجدداً",
+        btnPropose: "➕ اقتراح وصفة",
+        headingResults: "الوصفات المطابقة",
+        emptyState: "امسح رمز QR أعلاه لعرض الوصفات التي يمكنك تحضيرها!",
+        noMatch: "لم يتم العثور على وصفات لـ",
+        modalTitle: "اقترح وصفة جديدة",
+        labelTitle: "عنوان الوصفة",
+        labelIngredients: "المكونات (مفصولة بفاصلة)",
+        labelInstructions: "طريقة التحضير",
+        labelEmail: "بريدك الإلكتروني",
+        btnCancel: "إلغاء",
+        btnSubmit: "إرسال للمراجعة",
+        catMeal: "وجبة",
+        catConservation: "حفظ وتخزين",
+        ingLabel: "المكونات:"
+      },
+      ary: {
+        dir: "rtl",
+        appSubtitle: "الوصفات المشتركة",
+        appDesc: "سكاني الكود ديال الخضرة باش تلقى وصفات مناسبة",
+        scannedLabel: "الخضرة المكتشفة:",
+        btnScanAgain: "🔄 سكاني من جديد",
+        btnPropose: "➕ اقترح وصفة",
+        headingResults: "الوصفات المتاحة",
+        emptyState: "سكاني كود QR الفوق باش تشوف أشنو تقدر تطيب!",
+        noMatch: "ما لقينا حتى وصفة لـ",
+        modalTitle: "اقترح وصفة جديدة",
+        labelTitle: "سمية الوصفة",
+        labelIngredients: "المقادير (مفرقين بفاصلة)",
+        labelInstructions: "طريقة التحضير",
+        labelEmail: "الجيمايل ديالك",
+        btnCancel: "إلغاء",
+        btnSubmit: "صيفط للمراجعة",
+        catMeal: "وجبة رئيسية",
+        catConservation: "تصويب وتخزين",
+        ingLabel: "المقادير:"
+      }
+    };
 
-        // --- LIVE GOOGLE SHEET CSV SYNC ---
-        async function fetchGoogleSheetData() {
-            try {
-                const [ingRes, recRes] = await Promise.all([
-                    fetch(`${INGREDIENTS_CSV_URL}&_t=${Date.now()}`),
-                    fetch(`${RECIPES_CSV_URL}&_t=${Date.now()}`)
-                ]);
-
-                if (!ingRes.ok || !recRes.ok) return;
-
-                const ingCsvText = await ingRes.text();
-                const recCsvText = await recRes.text();
-
-                const parsedIng = Papa.parse(ingCsvText, { header: true, skipEmptyLines: true }).data;
-                const parsedRec = Papa.parse(recCsvText, { header: true, skipEmptyLines: true }).data;
-
-                if (parsedIng && parsedIng.length > 0) {
-                    ingredientsData = parsedIng.map((row, idx) => {
-                        // Flexible column mapping: reads 'Item', 'Ingredient', 'Name', or 'Ingrediënt'
-                        const name = row['Item'] || row['Ingredient'] || row['Name'] || row['Ingrediënt'] || `Ingredient ${idx + 1}`;
-                        const id = (row['ID'] || name).toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
-                        return {
-                            id: id,
-                            name: { en: name, nl: name, es: name, ar: name, tr: name }
-                        };
-                    });
-                }
-
-                if (parsedRec && parsedRec.length > 0) {
-                    recipesData = parsedRec.map((row, idx) => {
-                        const title = row['Title'] || row['Recipe'] || row['Recept'] || `Recipe ${idx + 1}`;
-                        const categoryRaw = (row['Category'] || row['Categorie'] || 'Meal').toString().toLowerCase();
-                        const category = categoryRaw.includes('conser') ? 'Conservation' : 'Meal';
-                        const ingRaw = row['Ingredients'] || row['Ingrediënten'] || '';
-                        const instructions = row['Instructions'] || row['Bereidingswijze'] || '';
-
-                        const ingIds = ingRaw.split(/[,;]/).map(s => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '_')).filter(Boolean);
-
-                        return {
-                            id: `gs_rec_${idx}`,
-                            category: category,
-                            title: { en: title, nl: title, es: title, ar: title, tr: title },
-                            ingredients: ingIds,
-                            instructions: { en: instructions, nl: instructions, es: instructions, ar: instructions, tr: instructions }
-                        };
-                    });
-                }
-
-                syncStatusText.textContent = translations[currentLang].syncStatus;
-                renderIngredients(ingredientSearch.value.trim());
-                renderRecipes();
-            } catch (err) {
-                console.log("Using pre-populated dataset.");
-            }
+    // 2. Multilingual Recipes Database
+    const recipes = [
+      {
+        title: { en: "Pickles", nl: "Augurken / Inmaken", tr: "Turşu", ar: "مخلل", ary: "مخلل (ترشي)" },
+        category: "Conservation",
+        ingredients: {
+          en: ["Cucumbers", "Vinegar", "Water", "Salt", "Garlic", "Dill"],
+          nl: ["Komkommer", "Azijn", "Water", "Zout", "Knoflook", "Dille"],
+          tr: ["Salatalık", "Sirke", "Su", "Tuz", "Sarımsak", "Dereotu"],
+          ar: ["خيار", "خل", "ماء", "ملح", "ثوم", "شبت"],
+          ary: ["خيار", "خل", "ما", "ملحة", "ثومة", "قزبور"]
+        },
+        instructions: {
+          en: "Boil vinegar, water, and salt. Pack cucumbers and garlic into jars, pour hot liquid over, and seal tightly.",
+          nl: "Kook de azijn, het water en het zout. Vul potten met komkommer en knoflook, giet de hete vloeistof erover en sluit af.",
+          tr: "Sirke, su ve tuzu kaynatın. Salatalık ve sarımsakları kavanozlara doldurun, üzerine sıcak sıvıyı döküp sıkıca kapatın.",
+          ar: "اغلي الخل والماء والملح. ضع الخيار والثوم في برطمانات، وصب السائل الساخن فوقها وأغلقها بإحكام.",
+          ary: "غلي الخل والما والملحة. دير الخيار والثومة فقرعات د الزجاج، كب عليهم الخليط سخون وسد القرعة مزيان."
         }
-
-        // --- EVENT LISTENERS ---
-        function setupEventListeners() {
-            langSelect.addEventListener('change', (e) => {
-                currentLang = e.target.value;
-                updateLanguage(currentLang);
-                renderIngredients();
-                renderRecipes();
-            });
-
-            ingredientSearch.addEventListener('input', () => {
-                const query = ingredientSearch.value.trim();
-                clearSearchBtn.classList.toggle('hidden', query === '');
-                renderIngredients(query);
-            });
-
-            clearSearchBtn.addEventListener('click', () => {
-                ingredientSearch.value = '';
-                clearSearchBtn.classList.add('hidden');
-                renderIngredients();
-            });
-
-            btnClearSelection.addEventListener('click', () => {
-                selectedIngredients.clear();
-                updateSelectedCount();
-                renderIngredients(ingredientSearch.value.trim());
-                renderRecipes();
-            });
-
-            tabAll.addEventListener('click', () => setCategoryFilter('all'));
-            tabMeal.addEventListener('click', () => setCategoryFilter('Meal'));
-            tabConservation.addEventListener('click', () => setCategoryFilter('Conservation'));
+      },
+      {
+        title: { en: "Tomato Sauce", nl: "Tomatensaus", tr: "Domates Sosu", ar: "صلصة طماطم", ary: "لاصوص د الطماطيش" },
+        category: "Conservation",
+        ingredients: {
+          en: ["Tomatoes", "Olive Oil", "Garlic", "Onion", "Salt", "Basil"],
+          nl: ["Tomaten", "Olijfolie", "Knoflook", "Ui", "Zout", "Basilicum"],
+          tr: ["Domates", "Zeytinyağı", "Sarımsak", "Soğan", "Tuz", "Fesleğen"],
+          ar: ["طماطم", "زيت زيتون", "ثوم", "بصل", "ملح", "حبق"],
+          ary: ["طماطيش", "زيت البلدية", "ثومة", "بصلة", "ملحة", "حبق"]
+        },
+        instructions: {
+          en: "Simmer crushed tomatoes with sautéed garlic and onion for 45 mins. Blend until smooth and store.",
+          nl: "Laat geplette tomaten met gefruite knoflook en ui 45 minuten sudderen. Pureer tot een gladde saus.",
+          tr: "Ezilmiş domatesleri soteelenmiş sarımsak ve soğanla 45 dakika kısık ateşte pişirin. Pürüzsüz olana kadar karıştırın.",
+          ar: "اترك الطماطم المهروسة تطهى على نار هادئة مع الثوم والبصل المحمر لمدة 45 دقيقة. اخلطها حتى تصبح ناعمة.",
+          ary: "طيب الطماطيش مطحونة مع الثومة والبصلة في الزيت لمدة 45 دقيقة. طحن كلشي مزيان ونقصها فقرعات."
         }
-
-        // --- LANGUAGE SWITCHER & DIRECTION ---
-        function updateLanguage(lang) {
-            const t = translations[lang] || translations.en;
-            const isRTL = (lang === 'ar');
-
-            document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-            document.documentElement.lang = lang;
-            if (isRTL) {
-                document.body.classList.add('font-arabic');
-            } else {
-                document.body.classList.remove('font-arabic');
-            }
-
-            document.getElementById('app-title').textContent = t.appTitle;
-            document.getElementById('app-subtitle').textContent = t.appSubtitle;
-            syncStatusText.textContent = t.syncStatus;
-            
-            document.getElementById('heading-ingredients').childNodes[2].nodeValue = " " + t.headingIngredients;
-            ingredientSearch.placeholder = t.searchPlaceholder;
-            document.getElementById('available-stock-lbl').textContent = t.availableStock;
-            document.getElementById('btn-clear-txt').textContent = t.btnReset;
-
-            document.getElementById('heading-recipes').childNodes[2].nodeValue = " " + t.headingRecipes;
-            document.getElementById('subheading-recipes').textContent = t.subheadingRecipes;
-
-            document.getElementById('lbl-tab-all').textContent = t.tabAll;
-            document.getElementById('lbl-tab-meal').textContent = t.tabMeal;
-            document.getElementById('lbl-tab-conservation').textContent = t.tabConservation;
-            document.getElementById('excel-format-note').childNodes[2].nodeValue = " " + t.excelNote;
-
-            updateSelectedCount();
+      },
+      {
+        title: { en: "Pasta alla Norma", nl: "Pasta alla Norma", tr: "Patlıcanlı Makarna", ar: "باستا بالباذنجان", ary: "باستا بالدنجال" },
+        category: "Meal",
+        ingredients: {
+          en: ["Pasta", "Eggplant", "Tomatoes", "Garlic", "Cheese", "Basil"],
+          nl: ["Pasta", "Aubergine", "Tomaten", "Knoflook", "Kaas", "Basilicum"],
+          tr: ["Makarna", "Patlıcan", "Domates", "Sarımsak", "Peynir", "Fesleğen"],
+          ar: ["معكرونة", "باذنجان", "طماطم", "ثوم", "جبن", "حبق"],
+          ary: ["مقرونية", "دنجال", "طماطيش", "ثومة", "فرماج", "حبق"]
+        },
+        instructions: {
+          en: "Fry cubed eggplant. Make a basic garlic tomato sauce. Toss cooked pasta with sauce, top with fried eggplant and cheese.",
+          nl: "Bak blokjes aubergine. Maak een knoflook-tomatensaus. Meng de gekookte pasta met saus en voeg aubergine en kaas toe.",
+          tr: "Küp şeklinde doğranmış patlıcanları kızartın. Domates ve sarımsaklı sos hazırlayın. Makarnayı sosla karıştırıp servis edin.",
+          ar: "اقلي مكعبات الباذنجان. حضر صلصة طماطم وثوم بسيطة. اخلط المعكرونة المطبوخة مع الصلصة وقم بتزيينها بالباذنجان والجبن.",
+          ary: "قلي الدنجال مربعات. صاوب لاصوص طماطيش بالثومة. خلط المقرونية مع لاصوص وزيد الدنجال مقلي والفرماج من الفوق."
         }
+      }
+    ];
 
-        // --- RENDER INGREDIENTS LIST ---
-        function renderIngredients(filterQuery = "") {
-            ingredientsContainer.innerHTML = "";
-            const t = translations[currentLang];
+    let currentLang = "en";
+    let lastScannedItem = "";
 
-            const filtered = ingredientsData.filter(ing => {
-                const nameStr = getLocalizedStr(ing.name).toLowerCase();
-                return nameStr.includes(filterQuery.toLowerCase());
-            });
+    function changeLanguage(lang) {
+      currentLang = lang;
+      const t = translations[lang];
 
-            if (filtered.length === 0) {
-                ingredientsContainer.innerHTML = `
-                    <div class="text-center py-8 text-slate-400 text-xs italic">
-                        ${t.noIngredientsFound}
-                    </div>`;
-                return;
-            }
+      document.documentElement.dir = t.dir;
 
-            filtered.forEach(ing => {
-                const isSelected = selectedIngredients.has(ing.id);
-                const displayName = getLocalizedStr(ing.name);
+      // Update UI Texts
+      document.getElementById("t-app-subtitle").innerText = t.appSubtitle;
+      document.getElementById("t-app-desc").innerText = t.appDesc;
+      document.getElementById("t-scanned-label").innerText = t.scannedLabel;
+      document.getElementById("t-btn-scan-again").innerText = t.btnScanAgain;
+      document.getElementById("t-btn-propose").innerText = t.btnPropose;
+      document.getElementById("t-heading-results").innerText = t.headingResults;
+      document.getElementById("t-modal-title").innerText = t.modalTitle;
+      document.getElementById("t-label-title").innerText = t.labelTitle;
+      document.getElementById("t-label-ingredients").innerText = t.labelIngredients;
+      document.getElementById("t-label-instructions").innerText = t.labelInstructions;
+      document.getElementById("t-label-email").innerText = t.labelEmail;
+      document.getElementById("t-btn-cancel").innerText = t.btnCancel;
+      document.getElementById("t-btn-submit").innerText = t.btnSubmit;
 
-                const itemEl = document.createElement('label');
-                itemEl.className = `flex items-center justify-between p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                    isSelected 
-                    ? 'bg-blue-50 border-blue-400 text-blue-900 shadow-xs font-semibold' 
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-slate-50/80'
-                }`;
+      if (lastScannedItem) {
+        filterRecipes(lastScannedItem);
+      } else {
+        document.getElementById("recipe-list").innerHTML = `<p class="text-slate-400 text-sm text-center py-6">${t.emptyState}</p>`;
+      }
+    }
 
-                itemEl.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer" ${isSelected ? 'checked' : ''}>
-                        <span class="text-xs sm:text-sm">${displayName}</span>
-                    </div>
-                    ${isSelected ? '<i class="fa-solid fa-circle-check text-blue-600 text-sm"></i>' : ''}
-                `;
+    function onScanSuccess(decodedText, decodedResult) {
+      lastScannedItem = decodedText.trim();
+      document.getElementById("ingredient-name").innerText = lastScannedItem;
+      document.getElementById("scanned-result").classList.remove("hidden");
 
-                itemEl.addEventListener('change', () => {
-                    if (selectedIngredients.has(ing.id)) {
-                        selectedIngredients.delete(ing.id);
-                    } else {
-                        selectedIngredients.add(ing.id);
-                    }
-                    updateSelectedCount();
-                    renderIngredients(ingredientSearch.value.trim());
-                    renderRecipes();
-                });
+      filterRecipes(lastScannedItem);
+    }
 
-                ingredientsContainer.appendChild(itemEl);
-            });
-        }
+    function filterRecipes(ingredient) {
+      const listContainer = document.getElementById("recipe-list");
+      listContainer.innerHTML = "";
+      const t = translations[currentLang];
 
-        // --- RENDER RECIPES WITH AUTOMATIC RANKING ---
-        function renderRecipes() {
-            recipesContainer.innerHTML = "";
-            const t = translations[currentLang];
+      const matched = recipes.filter(r => {
+        const langIngredients = r.ingredients[currentLang] || r.ingredients["en"];
+        return langIngredients.some(i => i.toLowerCase().includes(ingredient.toLowerCase()));
+      });
 
-            let list = recipesData.filter(rec => {
-                if (currentCategoryFilter === 'all') return true;
-                return rec.category === currentCategoryFilter;
-            });
+      if (matched.length === 0) {
+        listContainer.innerHTML = `<p class="text-slate-500 text-sm text-center py-4">${t.noMatch} "${ingredient}".</p>`;
+        return;
+      }
 
-            const rankedRecipes = list.map(rec => {
-                let matchCount = 0;
-                const missingList = [];
+      matched.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm";
+        const titleText = r.title[currentLang] || r.title["en"];
+        const ingredientsList = (r.ingredients[currentLang] || r.ingredients["en"]).join(", ");
+        const instructionsText = r.instructions[currentLang] || r.instructions["en"];
+        const categoryBadge = r.category === "Meal" ? t.catMeal : t.catConservation;
 
-                rec.ingredients.forEach(ingId => {
-                    if (selectedIngredients.has(ingId)) {
-                        matchCount++;
-                    } else {
-                        missingList.push(ingId);
-                    }
-                });
-                const totalReq = rec.ingredients.length;
-                const matchRatio = totalReq > 0 ? (matchCount / totalReq) : 0;
-                const matchPct = Math.round(matchRatio * 100);
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-1">
+            <h3 class="font-bold text-slate-800">${titleText}</h3>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">${categoryBadge}</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-2 font-medium">${t.ingLabel} ${ingredientsList}</p>
+          <p class="text-sm text-slate-600">${instructionsText}</p>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
 
-                return { ...rec, matchCount, totalReq, matchPct, matchRatio, missingList };
-            });
+    function resetScanner() {
+      lastScannedItem = "";
+      document.getElementById("scanned-result").classList.add("hidden");
+      document.getElementById("recipe-list").innerHTML = `<p class="text-slate-400 text-sm text-center py-6">${translations[currentLang].emptyState}</p>`;
+    }
 
-            // Automatic Ordering: highest match count first, then match ratio
-            rankedRecipes.sort((a, b) => {
-                if (b.matchCount !== a.matchCount) {
-                    return b.matchCount - a.matchCount;
-                }
-                return b.matchRatio - a.matchRatio;
-            });
+    function openModal() { document.getElementById("proposalModal").classList.remove("hidden"); }
+    function closeModal() { document.getElementById("proposalModal").classList.add("hidden"); }
 
-            if (rankedRecipes.length === 0) {
-                recipesContainer.innerHTML = `
-                    <div class="text-center py-12 px-4 bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
-                        <i class="fa-solid fa-utensils text-slate-300 text-3xl mb-2"></i>
-                        <p class="text-xs sm:text-sm text-slate-500 font-medium">${t.noRecipesFound}</p>
-                    </div>`;
-                return;
-            }
-
-            rankedRecipes.forEach(rec => {
-                const titleStr = getLocalizedStr(rec.title);
-                const instructionsStr = getLocalizedStr(rec.instructions);
-                const isMeal = rec.category === "Meal";
-                
-                const badgeText = t.matchBadge
-                    .replace('{matched}', rec.matchCount)
-                    .replace('{total}', rec.totalReq)
-                    .replace('{pct}', rec.matchPct);
-                
-                const isFullMatch = rec.matchCount === rec.totalReq && rec.totalReq > 0;
-                const badgeColor = isFullMatch 
-                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
-                    : (rec.matchCount > 0 ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200');
-
-                // Available / Missing Ingredient Pills
-                const ingPillsHtml = rec.ingredients.map(ingId => {
-                    const ingObj = ingredientsData.find(i => i.id === ingId);
-                    const name = ingObj ? getLocalizedStr(ingObj.name) : ingId.replace(/_/g, ' ');
-                    const isAvailable = selectedIngredients.has(ingId);
-
-                    return `
-                        <span class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${
-                            isAvailable 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold' 
-                            : 'bg-slate-100 text-slate-500 border-slate-200 line-through opacity-75'
-                        }">
-                            <i class="fa-solid ${isAvailable ? 'fa-check text-emerald-600' : 'fa-xmark text-slate-400'} text-[9px]"></i>
-                            ${name}
-                        </span>`;
-                }).join(" ");
-
-                const card = document.createElement('div');
-                card.className = "recipe-card bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 shadow-xs relative overflow-hidden";
-                
-                card.innerHTML = `
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                                isMeal ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                            }">
-                                ${isMeal ? '<i class="fa-solid fa-bowl-food me-1"></i>' + t.categoryMeal : '<i class="fa-solid fa-jar me-1"></i>' + t.categoryConservation}
-                            </span>
-                            <h3 class="text-base sm:text-lg font-bold text-slate-900">${titleStr}</h3>
-                        </div>
-
-                        <span class="self-start sm:self-auto text-xs font-semibold px-2.5 py-1 rounded-full border ${badgeColor} shrink-0 flex items-center gap-1.5">
-                            <i class="fa-solid fa-chart-pie text-[10px]"></i>
-                            ${badgeText}
-                        </span>
-                    </div>
-
-                    <div class="mb-3.5">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">${t.ingredientsNeeded}</p>
-                        <div class="flex flex-wrap gap-1.5">
-                            ${ingPillsHtml}
-                        </div>
-                    </div>
-
-                    <details class="group border-t border-slate-100 pt-3">
-                        <summary class="flex justify-between items-center text-xs font-semibold text-blue-600 cursor-pointer list-none select-none hover:text-blue-700">
-                            <span><i class="fa-solid fa-list-check me-1"></i> ${t.instructions}</span>
-                            <i class="fa-solid fa-chevron-down transition-transform group-open:rotate-180 text-slate-400 text-xs"></i>
-                        </summary>
-                        <p class="mt-2.5 text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                            ${instructionsStr}
-                        </p>
-                    </details>
-                `;
-
-                recipesContainer.appendChild(card);
-            });
-        }
-
-        // --- TAB SELECTION HANDLER ---
-        function setCategoryFilter(cat) {
-            currentCategoryFilter = cat;
-            
-            [tabAll, tabMeal, tabConservation].forEach(btn => {
-                btn.classList.remove('bg-white', 'text-blue-600', 'shadow-xs');
-                btn.classList.add('text-slate-600');
-            });
-
-            if (cat === 'all') {
-                tabAll.classList.add('bg-white', 'text-blue-600', 'shadow-xs');
-            } else if (cat === 'Meal') {
-                tabMeal.classList.add('bg-white', 'text-blue-600', 'shadow-xs');
-            } else if (cat === 'Conservation') {
-                tabConservation.classList.add('bg-white', 'text-blue-600', 'shadow-xs');
-            }
-
-            renderRecipes();
-        }
-
-        // --- UPDATE SELECTED BADGE COUNT ---
-        function updateSelectedCount() {
-            const count = selectedIngredients.size;
-            const t = translations[currentLang];
-            selectedCountBadge.textContent = t.selectedBadge.replace('{count}', count);
-        }
-
-        // --- LOCALIZATION HELPER ---
-        function getLocalizedStr(item) {
-            if (typeof item === 'string') return item;
-            if (!item) return '';
-            return item[currentLang] || item.en || Object.values(item)[0] || '';
-        }
-    </script>
+    window.addEventListener("load", () => {
+      const html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 200, height: 200 } },
+        onScanSuccess
+      ).catch(err => {
+        console.warn("Camera initialization error:", err);
+      });
+    });
+  </script>
 </body>
 </html>
