@@ -10,6 +10,8 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <!-- QRCodeJS Library for In-App Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- PapaParse for Live Google Sheet CSV Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center p-4 transition-all">
 
@@ -36,9 +38,13 @@
     </div>
 
     <!-- App Header -->
-    <header class="text-center mb-6">
+    <header class="text-center mb-5">
       <h1 class="text-xl font-bold text-emerald-700">🌱 Participatie Keuken</h1>
       <p id="t-app-subtitle" class="text-xs text-slate-400 mt-1 font-medium">Shared Recipes</p>
+      <div id="sync-status" class="mt-2 inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+        <span>Connecting to Google Sheet...</span>
+      </div>
     </header>
 
     <!-- ================= VIEW 1: SCANNER & RECIPES ================= -->
@@ -61,6 +67,7 @@
           <button onclick="filterBySeason('Summer')" id="btn-season-Summer" class="bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-1 rounded-full border border-amber-200 transition">☀️ Summer</button>
           <button onclick="filterBySeason('Autumn')" id="btn-season-Autumn" class="bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-1 rounded-full border border-orange-200 transition">🍂 Autumn</button>
           <button onclick="filterBySeason('Winter')" id="btn-season-Winter" class="bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-medium px-2.5 py-1 rounded-full border border-sky-200 transition">❄️ Winter</button>
+          <button onclick="showAllRecipes()" id="btn-season-All" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-full border border-slate-200 transition">📋 All</button>
         </div>
       </div>
 
@@ -90,11 +97,14 @@
       <!-- Quick Produce Presets -->
       <div class="mb-3">
         <p id="t-presets-label" class="text-xs font-semibold text-slate-400 uppercase mb-1.5">Produce Presets:</p>
-        <div class="flex flex-wrap justify-center gap-1.5">
+        <div id="produce-presets-container" class="flex flex-wrap justify-center gap-1.5">
           <button onclick="setQRValue('Tomatoes', 'Tomatoes')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Tomatoes</button>
           <button onclick="setQRValue('Cucumbers', 'Cucumbers')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Cucumbers</button>
-          <button onclick="setQRValue('Eggplant', 'Eggplant')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Eggplant</button>
-          <button onclick="setQRValue('Pumpkin', 'Pumpkin')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Pumpkin</button>
+          <button onclick="setQRValue('Asparagus', 'Asparagus')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Asparagus</button>
+          <button onclick="setQRValue('Potatoes', 'Potatoes')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Potatoes</button>
+          <button onclick="setQRValue('Butternut Squash', 'Butternut Squash')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Butternut Squash</button>
+          <button onclick="setQRValue('Cauliflower', 'Cauliflower')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Cauliflower</button>
+          <button onclick="setQRValue('Apples', 'Apples')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Apples</button>
         </div>
       </div>
 
@@ -170,7 +180,10 @@
   </div>
 
   <script>
-    // 1. Interface Translations Dictionary
+    // Live Google Sheet CSV URL (Recipes Tab)
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSS7sjIW99RD6dxh1SOhFLHvkHfIJsI-nLhQUINCK_B99Xva6OQDVX85BFeaUIKp48Zvejj4d2I5bIr/pub?gid=0&single=true&output=csv";
+
+    // Interface Translations Dictionary (7 Languages)
     const translations = {
       en: {
         dir: "ltr",
@@ -178,6 +191,7 @@
         appDesc: "Scan produce or seasonal QR codes to find matching recipes",
         scannedLabel: "Scanned:",
         seasonFilterLabel: "Season:",
+        allRecipesLabel: "All Recipes",
         browseSeason: "Or Browse by Season:",
         btnScanAgain: "🔄 Reset",
         btnPropose: "➕ Propose Recipe",
@@ -210,6 +224,7 @@
         appDesc: "Scan een product- of seizoens-QR-code om recepten te vinden",
         scannedLabel: "Gescand:",
         seasonFilterLabel: "Seizoen:",
+        allRecipesLabel: "Alle Recepten",
         browseSeason: "Of bekijk per seizoen:",
         btnScanAgain: "🔄 Opnieuw",
         btnPropose: "➕ Recept Voorstellen",
@@ -242,6 +257,7 @@
         appDesc: "Zeskanuj kod QR produktu lub pory roku, aby znaleźć przepisy",
         scannedLabel: "Zeskanowano:",
         seasonFilterLabel: "Pora roku:",
+        allRecipesLabel: "Wszystkie przepisy",
         browseSeason: "Lub przeglądaj według pory roku:",
         btnScanAgain: "🔄 Resetuj",
         btnPropose: "➕ Zaproponuj przepis",
@@ -274,6 +290,7 @@
         appDesc: "Skani kódigo QR di produkto òf temporada pa haña reseta",
         scannedLabel: "Skaniá:",
         seasonFilterLabel: "Temporada:",
+        allRecipesLabel: "Tur Reseta",
         browseSeason: "Òf buska pa temporada:",
         btnScanAgain: "🔄 Resèt",
         btnPropose: "➕ Proponé Reseta",
@@ -306,6 +323,7 @@
         appDesc: "Tarifleri bulmak için ürün veya mevsim QR kodunu tarayın",
         scannedLabel: "Taranan:",
         seasonFilterLabel: "Mevsim:",
+        allRecipesLabel: "Tüm Tarifler",
         browseSeason: "Veya mevsime göre göz atın:",
         btnScanAgain: "🔄 Sıfırla",
         btnPropose: "➕ Tarif Öner",
@@ -338,6 +356,7 @@
         appDesc: "امسح رمز QR للمنتج أو الموسم للعثور على وصفات مناسبة",
         scannedLabel: "تم المسح:",
         seasonFilterLabel: "الموسم:",
+        allRecipesLabel: "جميع الوصفات",
         browseSeason: "أو تصفح حسب الموسم:",
         btnScanAgain: "🔄 إعادة ضبط",
         btnPropose: "➕ اقتراح وصفة",
@@ -370,6 +389,7 @@
         appDesc: "سكاني الكود ديال الخضرة أو الفصل باش تلقى الوصفات",
         scannedLabel: "تسكاني:",
         seasonFilterLabel: "الفصل:",
+        allRecipesLabel: "جميع الوصفات",
         browseSeason: "أو قلب على حساب الفصل:",
         btnScanAgain: "🔄 عاود من اللول",
         btnPropose: "➕ اقترح وصفة",
@@ -398,150 +418,23 @@
       }
     };
 
-    // 2. Multilingual Recipes Database with Seasonal Classification
-    const recipes = [
-      {
-        title: { en: "Pickles", nl: "Augurken / Inmaken", pl: "Ogórki konserwowe", pap: "Pikkel / Konserva", tr: "Turşu", ar: "مخلل", ary: "مخلل (ترشي)" },
-        category: "Conservation",
-        season: "Summer",
-        ingredients: {
-          en: ["Cucumbers", "Vinegar", "Water", "Salt", "Garlic", "Dill"],
-          nl: ["Komkommer", "Azijn", "Water", "Zout", "Knoflook", "Dille"],
-          pl: ["Ogórki", "Ocet", "Woda", "Sól", "Czosnek", "Koper"],
-          pap: ["Kukamber", "Binager", "Awa", "Salu", "Ajo", "Dill"],
-          tr: ["Salatalık", "Sirke", "Su", "Tuz", "Sarımsak", "Dereotu"],
-          ar: ["خيار", "خل", "ماء", "ملح", "ثوم", "شبت"],
-          ary: ["خيار", "خل", "ما", "ملحة", "ثومة", "قزبور"]
-        },
-        instructions: {
-          en: "Boil vinegar, water, and salt. Pack cucumbers and garlic into jars, pour hot liquid over, and seal tightly.",
-          nl: "Kook de azijn, het water en het zout. Vul potten met komkommer en knoflook, giet de hete vloeistof erover en sluit af.",
-          pl: "Zagotuj ocet, wodę i sól. Włóż ogórki i czosnek do słoików, zalej gorącym płynem i szczelnie zamknij.",
-          pap: "Herbé binager, awa i salu. Pone kukamber i ajo den pòchi, basha likido kayente riba dje i sera bon.",
-          tr: "Sirke, su ve tuzu kaynatın. Salatalık ve sarımsakları kavanozlara doldurun, üzerine sıcak sıvıyı döküp sıkıca kapatın.",
-          ar: "اغلي الخل والماء والملح. ضع الخيار والثوم في برطمانات، وصب السائل الساخن فوقها وأغلقها بإحكام.",
-          ary: "غلي الخل والما والملحة. دير الخيار والثومة فقرعات د الزجاج، كب عليهم الخليط سخون وسد القرعة مزيان."
-        }
-      },
-      {
-        title: { en: "Tomato Sauce", nl: "Tomatensaus", pl: "Sos pomidorowy", pap: "Salsa di Tomati", tr: "Domates Sosu", ar: "صلصة طماطم", ary: "لاصوص د الطماطيش" },
-        category: "Conservation",
-        season: "Summer",
-        ingredients: {
-          en: ["Tomatoes", "Olive Oil", "Garlic", "Onion", "Salt", "Basil"],
-          nl: ["Tomaten", "Olijfolie", "Knoflook", "Ui", "Zout", "Basilicum"],
-          pl: ["Pomidory", "Oliwa z oliwek", "Czosnek", "Cebula", "Sól", "Bazylia"],
-          pap: ["Tomati", "Azeta di Oleifi", "Ajo", "Siboyo", "Salu", "Basilchi"],
-          tr: ["Domates", "Zeytinyağı", "Sarımsak", "Soğan", "Tuz", "Fesleğen"],
-          ar: ["طماطم", "زيت زيتون", "ثوم", "بصل", "ملح", "حبق"],
-          ary: ["طماطيش", "زيت البلدية", "ثومة", "بصلة", "ملحة", "حبق"]
-        },
-        instructions: {
-          en: "Simmer crushed tomatoes with sautéed garlic and onion for 45 mins. Blend until smooth and store.",
-          nl: "Laat geplette tomaten met gefruite knoflook en ui 45 minuten sudderen. Pureer tot een gladde saus.",
-          pl: "Gotuj rozgniecione pomidory z podsmażonym czosnkiem i cebulą przez 45 minut. Zblenduj na gładko i przechowuj.",
-          pap: "Kushina tomati machiká ku ajo i siboyo hasá pa 45 minüt. Blend te ora e bira suave i warda.",
-          tr: "Ezilmiş domatesleri sotelenmiş sarımsak ve soğanla 45 dakika kısık ateşte pişirin. Pürüzsüz olana kadar karıştırın.",
-          ar: "اترك الطماطم المهروسة تطهى على نار هادئة مع الثوم والبصل المحمر لمدة 45 دقيقة. اخلطها حتى تصبح ناعمة.",
-          ary: "طيب الطماطيش مطحونة مع الثومة والبصلة في الزيت لمدة 45 دقيقة. طحن كلشي مزيان ونقصها فقرعات."
-        }
-      },
-      {
-        title: { en: "Pasta alla Norma", nl: "Pasta alla Norma", pl: "Pasta alla Norma", pap: "Pasta alla Norma", tr: "Patlıcanlı Makarna", ar: "باستا بالباذنجان", ary: "باستا بالدنجال" },
-        category: "Meal",
-        season: "Summer",
-        ingredients: {
-          en: ["Pasta", "Eggplant", "Tomatoes", "Garlic", "Cheese", "Basil"],
-          nl: ["Pasta", "Aubergine", "Tomaten", "Knoflook", "Kaas", "Basilicum"],
-          pl: ["Makaron", "Bakłażan", "Pomidory", "Czosnek", "Ser", "Bazylia"],
-          pap: ["Pasta", "Berenjena", "Tomati", "Ajo", "Keshi", "Basilchi"],
-          tr: ["Makarna", "Patlıcan", "Domates", "Sarımsak", "Peynir", "Fesleğen"],
-          ar: ["معكرونة", "باذنجان", "طماطم", "ثوم", "جبن", "حبق"],
-          ary: ["مقرونية", "دنجال", "طماطيش", "ثومة", "فرماج", "حبق"]
-        },
-        instructions: {
-          en: "Fry cubed eggplant. Make a basic garlic tomato sauce. Toss cooked pasta with sauce, top with fried eggplant and cheese.",
-          nl: "Bak blokjes aubergine. Maak een knoflook-tomatensaus. Meng de gekookte pasta met saus en voeg aubergine en kaas toe.",
-          pl: "Usmaż pokrojonego w kostkę bakłażana. Zrób prosty sos pomidorowy z czosnkiem. Wymieszaj makaron z sosem, dodaj bakłażana i ser.",
-          pap: "Hasa berenjena na kùbi. Traha un salsa di tomati ku ajo. Miskla pasta kushiná ku salsa, pone berenjena i keshi riba dje.",
-          tr: "Küp şeklinde doğranmış patlıcanları kızartın. Domates ve sarımsaklı sos hazırlayın. Makarnayı sosla karıştırıp servis edin.",
-          ar: "اقلي مكعبات الباذنجان. حضر صلصة طماطم وثوم بسيطة. اخلط المعكرونة المطبوخة مع الصلصة وقم بتزيينها بالباذنجان والجبن.",
-          ary: "قلي الدنجال مربعات. صاوب لاصوص طماطيش بالثومة. خلط المقرونية مع لاصوص وزيد الدنجال مقلي والفرماج من الفوق."
-        }
-      },
-      {
-        title: { en: "Roasted Pumpkin Soup", nl: "Geroosterde Pompoensoep", pl: "Zupa krem z pieczonej dyni", pap: "Sòpi di Pampuna Hasá", tr: "Közlenmiş Balkabağı Çorbası", ar: "شوربة اليقطين المشوي", ary: "صوبة د القرعة الحمراء" },
-        category: "Meal",
-        season: "Autumn",
-        ingredients: {
-          en: ["Pumpkin", "Onion", "Garlic", "Olive Oil", "Salt", "Black Pepper"],
-          nl: ["Pompoen", "Ui", "Knoflook", "Olijfolie", "Zout", "Zwarte peper"],
-          pl: ["Dynia", "Cebula", "Czosnek", "Oliwa z oliwek", "Sól", "Czarny pieprz"],
-          pap: ["Pampuna", "Siboyo", "Ajo", "Azeta di Oleifi", "Salu", "Peper Pretu"],
-          tr: ["Balkabağı", "Soğan", "Sarımsak", "Zeytinyağı", "Tuz", "Karabiber"],
-          ar: ["يقطين", "بصل", "ثوم", "زيت زيتون", "ملح", "فلفل أسود"],
-          ary: ["قرعة حمراء", "بصلة", "ثومة", "زيت البلدية", "ملحة", "بزار"]
-        },
-        instructions: {
-          en: "Roast cubed pumpkin, onion, and garlic with olive oil for 30 mins. Blend with warm water or broth until creamy.",
-          nl: "Rooster blokjes pompoen, ui en knoflook 30 minuten met olijfolie. Pureer met warm water of bouillon tot een romige soep.",
-          pl: "Piecz pokrojoną dynię, cebulę i czosnek z oliwą przez 30 minut. Zblenduj z ciepłą wodą lub bulionem na krem.",
-          pap: "Hasa pampuna na kùbi, siboyo i ajo ku azeta pa 30 minüt. Blend ku awa kayente te ora e bira krema.",
-          tr: "Küp doğranmış balkabağı, soğan ve sarımsağı zeytinyağı ile 30 dakika fırınlayın. Sıcak su ile pürüzsüz olana kadar çekin.",
-          ar: "اشوِ مكعبات اليقطين والبصل والثوم مع زيت الزيتون لمدة 30 دقيقة. اخلطها مع الماء الدافئ حتى تصبح ناعمة.",
-          ary: "حمر القرعة مقطعة مع البصلة والثومة وزيت البلدية فالفران 30 دقيقة. طحنهم مع الما سخون حتى تولي صوبة خاترة."
-        }
-      },
-      {
-        title: { en: "Winter Root Vegetable Stew", nl: "Winterse Stoofpot", pl: "Zimowy gulasz warzywny", pap: "Stobá di Bèrdura di Wenter", tr: "Kış Sebzeleri Güveci", ar: "يخنة خضروات الشتاء", ary: "طاجين خضرة الشتاء" },
-        category: "Meal",
-        season: "Winter",
-        ingredients: {
-          en: ["Carrots", "Potatoes", "Onion", "Garlic", "Olive Oil", "Salt"],
-          nl: ["Wortels", "Aardappelen", "Ui", "Knoflook", "Olijfolie", "Zout"],
-          pl: ["Marchew", "Ziemniaki", "Cebula", "Czosnek", "Oliwa z oliwek", "Sól"],
-          pap: ["Wòrtel", "Batata", "Siboyo", "Ajo", "Azeta di Oleifi", "Salu"],
-          tr: ["Havuç", "Patates", "Soğan", "Sarımsak", "Zeytinyağı", "Tuz"],
-          ar: ["جزر", "بطاطس", "بصل", "ثوم", "زيت زيتون", "ملح"],
-          ary: ["خيزو", "بطاطا", "بصلة", "ثومة", "زيت البلدية", "ملحة"]
-        },
-        instructions: {
-          en: "Sauté chopped onion and garlic. Add cubed carrots and potatoes, cover with water, and simmer for 35 mins until tender.",
-          nl: "Fruit gesnipperde ui en knoflook. Voeg blokjes wortel en aardappel toe, voeg water toe en laat 35 minuten zachtjes koken.",
-          pl: "Podsmaż cebulę i czosnek. Dodaj pokrojoną marchew i ziemniaki, zalej wodą i duś przez 35 minut do miękkości.",
-          pap: "Hasa siboyo i ajo. Agregá wòrtel i batata na kùbi, tapa ku awa i laga kushina 35 minüt te ora nan ta moli.",
-          tr: "Doğranmış soğan ve sarımsağı soteleyin. Küp doğranmış havuç ve patatesleri ekleyin, üzerini geçecek kadar su koyup 35 dakika pişirin.",
-          ar: "شوّح البصل المفروم والثوم. أضف مكعبات الجزر والبطاطس، واغمرها بالماء واتركها على نار هادئة لمدة 35 دقيقة.",
-          ary: "شحر البصلة والثومة. زيد خيزو وبطاطا مقطعين، غطيهم بالما وخليهم يطيبو على نار مهيلة 35 دقيقة."
-        }
-      },
-      {
-        title: { en: "Spring Herb & Radish Salad", nl: "Lente Kruiden & Radijs Salade", pl: "Wiosenna sałatka z rzodkiewką", pap: "Salada di Primavera", tr: "Bahar Otları ve Turp Salatası", ar: "سلطة أعشاب الربيع والفجل", ary: "شلاضة د الربيع والفجل" },
-        category: "Meal",
-        season: "Spring",
-        ingredients: {
-          en: ["Radishes", "Cucumbers", "Olive Oil", "Salt", "Dill"],
-          nl: ["Radijs", "Komkommer", "Olijfolie", "Zout", "Dille"],
-          pl: ["Rzodkiewka", "Ogórki", "Oliwa z oliwek", "Sól", "Koper"],
-          pap: ["Raban", "Kukamber", "Azeta di Oleifi", "Salu", "Dill"],
-          tr: ["Turp", "Salatalık", "Zeytinyağı", "Tuz", "Dereotu"],
-          ar: ["فجل", "خيار", "زيت زيتون", "ملح", "شبت"],
-          ary: ["فجل", "خيار", "زيت البلدية", "ملحة", "قزبور"]
-        },
-        instructions: {
-          en: "Thinly slice radishes and cucumbers. Toss with fresh chopped herbs, olive oil, and a pinch of salt.",
-          nl: "Snijd radijs en komkommer in dunne plakjes. Meng met verse kruiden, olijfolie en een snufje zout.",
-          pl: "Pokrój cienko rzodkiewkę i ogórki. Wymieszaj ze świeżymi ziołami, oliwą z oliwek i szczyptą soli.",
-          pap: "Kòrta raban i kukamber fini. Miskla ku yerba fresku, azeta di oleifi i un tiki salu.",
-          tr: "Turp ve salatalıkları ince ince dilimleyin. Taze doğranmış otlar, zeytinyağı ve bir tutam tuz ile harmanlayın.",
-          ar: "قطّع الفجل والخيار إلى شرائح رفيعة. اخلطها مع الأعشاب الطازجة المفرومة وزيت الزيتون ورشة ملح.",
-          ary: "قطع الفجل والخيار طريفات رقاق. خلطهم مع الربيع مقطع، زيت البلدية وشوية د الملحة."
-        }
-      }
+    // Fallback Recipes Database (R1-R11)
+    let recipes = [
+      { id: "R1", title: "Pickles", category: "Conservation", season: "Summer", ingredients: "Cucumbers, Vinegar, Water, Salt, Garlic, Dill", instructions: "Boil vinegar, water, and salt. Pack cucumbers and garlic into jars, pour hot liquid over, and seal tightly.", ingredientCode: "Cucumbers" },
+      { id: "R2", title: "Tomato Sauce", category: "Conservation", season: "Summer", ingredients: "1 kg fresh tomatoes, 1 onion, 1 carrot, 1 stalk celery, 2 tbsp olive oil, 1 tsp sugar, basil, salt, pepper", instructions: "1. Finely dice carrot, celery and onion. 2. Blend tomatoes into a paste and strain for 30 mins. 3. Sauté vegetables in olive oil until soft. 4. Add tomato puree and simmer 45 mins. 5. Add sugar, salt, and pepper to taste.", ingredientCode: "Tomatoes" },
+      { id: "R3", title: "Amatriciana", category: "Meal", season: "All Year", ingredients: "Pasta, Tomatoes, Bacon, Cheese, Black Pepper", instructions: "Crisp the bacon, add crushed tomatoes, simmer. Toss cooked pasta directly into the sauce with cheese.", ingredientCode: "Tomatoes" },
+      { id: "R4", title: "Pasta alla Norma", category: "Meal", season: "Summer", ingredients: "Pasta, Eggplant, Tomatoes, Garlic, Cheese, Basil", instructions: "Fry cubed eggplant. Make a basic garlic tomato sauce. Toss cooked pasta with sauce, top with fried eggplant and cheese.", ingredientCode: "Eggplant" },
+      { id: "R5", title: "Spring Vegetable Orzo", category: "Meal", season: "Spring", ingredients: "30 g unsalted butter, 4 spring onions, 2 garlic cloves, 500 ml vegetable broth, 200 g orzo pasta, 200 g chopped spinach, 100 g cooked peas, salt, pepper", instructions: "1. Sauté spring onions and garlic in butter for 2 mins. 2. Add orzo and broth; cook 15 mins until absorbed. 3. Stir in spinach, salt, and pepper for 5 mins until wilted. 4. Fold in peas and rest 1 min.", ingredientCode: "Peas" },
+      { id: "R6", title: "Asparagus and Eggs", category: "Meal", season: "Spring", ingredients: "2 eggs per person, 200 g asparagus per person, onions, lemon, white wine (optional), broth, olive oil, salt, pepper", instructions: "1. Sauté thin onion slices in olive oil until translucent. 2. Add asparagus, salt, lemon juice, and optional wine. 3. Add a cup of broth and simmer 30 mins on low heat until tender. 4. Serve topped with scrambled eggs.", ingredientCode: "Asparagus" },
+      { id: "R7", title: "Chilled Pesto Pasta", category: "Meal", season: "Summer", ingredients: "500 g pasta, 500 g cherry tomatoes, 2 balls mozzarella, 185 g pesto peperoni e noci, Italian spices, balsamico creme, splash of milk", instructions: "1. Boil pasta and dice tomatoes and mozzarella. 2. Drain pasta, saving a ladle of pasta water, and let cool. 3. Toss chilled pasta with milk, pesto, Italian spices, salt, pepper, and pasta water. 4. Fold in tomatoes, mozzarella, and balsamico creme.", ingredientCode: "Tomatoes" },
+      { id: "R8", title: "Hutspot", category: "Meal", season: "Autumn", ingredients: "1 kg potatoes, 500 g carrots, 200 g onions, 40 g butter, splash of milk, nutmeg, salt, pepper, packet of jus", instructions: "1. Cut potatoes, carrots, and onion into pieces and boil in water for 20-25 mins until tender. 2. Drain, add butter and milk, and mash well. 3. Season with salt, pepper, and nutmeg, and serve with gravy.", ingredientCode: "Carrots" },
+      { id: "R9", title: "Butternut Squash Soup", category: "Meal", season: "Autumn", ingredients: "1 butternut squash (750 g), 1 onion, 2 cloves garlic, 1 tsp grated ginger, 2 tsp curry powder, 400 ml coconut milk, 400 ml water, 1 bouillon cube", instructions: "1. Fry onion, garlic, ginger, and curry powder in olive oil. 2. Add cubed squash, coconut milk, water, and bouillon cube. 3. Simmer 15-20 mins until soft, then puree smoothly with a hand blender.", ingredientCode: "Butternut Squash" },
+      { id: "R10", title: "Cauliflower Gratin", category: "Meal", season: "Winter", ingredients: "1 cauliflower (or broccoli), 50 g butter, 50 g flour, 500 ml milk, 1.5 tsp ground nutmeg, 150 g shredded cheese, salt, pepper", instructions: "1. Boil cauliflower florets and cubed stem for 8 mins; place in oven dish. 2. Make a roux with butter and flour, gradually whisk in milk until thick, and add nutmeg and half the cheese. 3. Pour over cauliflower, top with remaining cheese, and bake 30 mins at 200°C.", ingredientCode: "Cauliflower" },
+      { id: "R11", title: "Apple Turnover", category: "Meal", season: "Winter", ingredients: "10 puff pastry squares, 400 g apples, 50 g raisins, 1 tsp cinnamon, 6 tbsp sugar, 1 egg", instructions: "1. Mix diced apples with raisins, cinnamon, and half the sugar. 2. Spoon onto puff pastry squares, fold diagonally, and seal edges with a fork. 3. Brush with beaten egg, sprinkle remaining sugar, and bake 20 mins at 200°C.", ingredientCode: "Apples" }
     ];
 
     let currentLang = "en";
-    let activeFilter = { type: null, value: "" }; // type: 'ingredient' | 'season'
+    let activeFilter = { type: null, value: "" };
     let qrCodeInst = null;
 
     const seasonIcons = {
@@ -552,13 +445,74 @@
       "All Year": "🌍"
     };
 
+    function loadRecipesFromSheet() {
+      const statusEl = document.getElementById("sync-status");
+      const fetchUrl = `${SHEET_CSV_URL}&t=${Date.now()}`;
+
+      Papa.parse(fetchUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          const validRows = results.data
+            .filter(row => row.Title && row.Title.trim() !== "")
+            .map(row => ({
+              id: (row.RecipeID || "").trim(),
+              title: (row.Title || "").trim(),
+              category: (row.Category || "Meal").trim(),
+              season: (row.Season || "All Year").trim(),
+              ingredients: (row.Ingredients || "").trim(),
+              instructions: (row.Instructions || "").trim(),
+              ingredientCode: (row.IngredientCode || "").trim()
+            }));
+
+          if (validRows.length > 0) {
+            recipes = validRows;
+            statusEl.className = "mt-2 inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
+            statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span>Live Google Sheet synced (${recipes.length} recipes)</span>`;
+            updatePresetButtons();
+            reapplyActiveFilter();
+          }
+        },
+        error: function(err) {
+          console.warn("Could not fetch Google Sheet CSV, using fallback data:", err);
+          statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span><span>Offline mode (${recipes.length} recipes)</span>`;
+        }
+      });
+    }
+
+    function updatePresetButtons() {
+      const container = document.getElementById("produce-presets-container");
+      const codes = [...new Set(
+        recipes
+          .map(r => r.ingredientCode)
+          .filter(c => c && c.toLowerCase() !== "all")
+      )];
+
+      if (codes.length > 0) {
+        container.innerHTML = codes.map(code => {
+          const safeCode = code.replace(/'/g, "\\'");
+          return `<button onclick="setQRValue('${safeCode}', '${safeCode}')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">${code}</button>`;
+        }).join("");
+      }
+    }
+
+    function reapplyActiveFilter() {
+      if (activeFilter.type === "ingredient") {
+        filterRecipes(activeFilter.value);
+      } else if (activeFilter.type === "season") {
+        filterBySeason(activeFilter.value);
+      } else if (activeFilter.type === "all") {
+        showAllRecipes();
+      }
+    }
+
     function changeLanguage(lang) {
       currentLang = lang;
       const t = translations[lang];
 
       document.documentElement.dir = t.dir;
 
-      // Update UI Texts
       document.getElementById("t-app-subtitle").innerText = t.appSubtitle;
       document.getElementById("t-app-desc").innerText = t.appDesc;
       document.getElementById("t-browse-season").innerText = t.browseSeason;
@@ -581,17 +535,13 @@
       document.getElementById("t-gen-btn").innerText = t.genBtn;
       document.getElementById("t-print-btn").innerText = t.printBtn;
 
-      // Update Season Quick Filter Buttons
       ["Spring", "Summer", "Autumn", "Winter"].forEach(s => {
         const btn = document.getElementById(`btn-season-${s}`);
         if (btn) btn.innerText = `${seasonIcons[s]} ${t.seasons[s]}`;
       });
 
-      // Re-render current filter if active
-      if (activeFilter.type === "ingredient") {
-        filterRecipes(activeFilter.value);
-      } else if (activeFilter.type === "season") {
-        filterBySeason(activeFilter.value);
+      if (activeFilter.type) {
+        reapplyActiveFilter();
       } else {
         document.getElementById("recipe-list").innerHTML = `<p class="text-slate-400 text-sm text-center py-6">${t.emptyState}</p>`;
       }
@@ -649,7 +599,6 @@
     function onScanSuccess(decodedText) {
       const scanned = decodedText.trim();
       
-      // Check if QR code is a seasonal code (e.g., "SEASON:Summer" or URL with ?season=Summer)
       if (scanned.toUpperCase().startsWith("SEASON:")) {
         const seasonName = scanned.split(":")[1].trim();
         const normalizedSeason = seasonName.charAt(0).toUpperCase() + seasonName.slice(1).toLowerCase();
@@ -666,6 +615,15 @@
       }
     }
 
+    function showAllRecipes() {
+      activeFilter = { type: "all", value: "all" };
+      const t = translations[currentLang];
+      document.getElementById("t-scanned-label").innerText = "📋";
+      document.getElementById("ingredient-name").innerText = `${t.allRecipesLabel} (${recipes.length})`;
+      document.getElementById("scanned-result").classList.remove("hidden");
+      renderRecipeCards(recipes, t.allRecipesLabel);
+    }
+
     function filterBySeason(season) {
       activeFilter = { type: "season", value: season };
       const t = translations[currentLang];
@@ -677,7 +635,7 @@
       document.getElementById("scanned-result").classList.remove("hidden");
 
       const matched = recipes.filter(r => 
-        r.season.toLowerCase() === season.toLowerCase() || r.season === "All Year"
+        r.season.toLowerCase() === season.toLowerCase() || r.season.toLowerCase() === "all year"
       );
       renderRecipeCards(matched, translatedSeason);
     }
@@ -690,13 +648,12 @@
       document.getElementById("ingredient-name").innerText = ingredient;
       document.getElementById("scanned-result").classList.remove("hidden");
 
-      // Match across current language AND English fallback so English QR codes work in any selected language
-      const matched = recipes.filter(r => {
-        const langIngredients = r.ingredients[currentLang] || [];
-        const enIngredients = r.ingredients["en"] || [];
-        const combined = [...new Set([...langIngredients, ...enIngredients])];
-        return combined.some(i => i.toLowerCase().includes(ingredient.toLowerCase()));
-      });
+      const q = ingredient.toLowerCase();
+      const matched = recipes.filter(r => 
+        r.ingredients.toLowerCase().includes(q) || 
+        r.ingredientCode.toLowerCase().includes(q) ||
+        r.title.toLowerCase().includes(q)
+      );
 
       renderRecipeCards(matched, ingredient);
     }
@@ -714,22 +671,20 @@
       matched.forEach(r => {
         const card = document.createElement("div");
         card.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm";
-        const titleText = r.title[currentLang] || r.title["en"];
-        const ingredientsList = (r.ingredients[currentLang] || r.ingredients["en"]).join(", ");
-        const instructionsText = r.instructions[currentLang] || r.instructions["en"];
-        const categoryBadge = r.category === "Meal" ? t.catMeal : t.catConservation;
-        const seasonBadge = `${seasonIcons[r.season] || "🌱"} ${t.seasons[r.season] || r.season}`;
+        const categoryBadge = r.category.toLowerCase() === "meal" ? t.catMeal : (r.category.toLowerCase() === "conservation" ? t.catConservation : r.category);
+        const seasonKey = Object.keys(seasonIcons).find(k => k.toLowerCase() === r.season.toLowerCase()) || "All Year";
+        const seasonBadge = `${seasonIcons[seasonKey]} ${t.seasons[seasonKey] || r.season}`;
 
         card.innerHTML = `
           <div class="flex justify-between items-start gap-2 mb-1.5">
-            <h3 class="font-bold text-slate-800">${titleText}</h3>
+            <h3 class="font-bold text-slate-800">${r.title}</h3>
             <div class="flex flex-wrap gap-1 shrink-0">
               <span class="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">${seasonBadge}</span>
               <span class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">${categoryBadge}</span>
             </div>
           </div>
-          <p class="text-xs text-slate-500 mb-2 font-medium">${t.ingLabel} ${ingredientsList}</p>
-          <p class="text-sm text-slate-600">${instructionsText}</p>
+          <p class="text-xs text-slate-500 mb-2 font-medium">${t.ingLabel} ${r.ingredients}</p>
+          <p class="text-sm text-slate-600 whitespace-pre-line">${r.instructions}</p>
         `;
         listContainer.appendChild(card);
       });
@@ -745,7 +700,8 @@
     function closeModal() { document.getElementById("proposalModal").classList.add("hidden"); }
 
     window.addEventListener("load", () => {
-      // Support opening directly via seasonal URL link (e.g., index.html?season=Summer)
+      loadRecipesFromSheet();
+
       const params = new URLSearchParams(window.location.search);
       const urlSeason = params.get("season");
       if (urlSeason) {
