@@ -43,20 +43,31 @@
 
     <!-- ================= VIEW 1: SCANNER & RECIPES ================= -->
     <div id="viewScanner">
-      <p id="t-app-desc" class="text-sm text-slate-500 mb-4 text-center">Scan produce QR codes to find matching recipes</p>
+      <p id="t-app-desc" class="text-sm text-slate-500 mb-4 text-center">Scan produce or seasonal QR codes to find matching recipes</p>
       
       <!-- QR Scanner Section -->
-      <div class="mb-6">
+      <div class="mb-4">
         <div id="reader" class="w-full rounded-xl overflow-hidden border border-slate-200"></div>
         <div id="scanned-result" class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 font-medium hidden">
-          <span id="t-scanned-label">Scanned Ingredient:</span> <span id="ingredient-name" class="font-bold underline"></span>
+          <span id="t-scanned-label">Scanned:</span> <span id="ingredient-name" class="font-bold underline"></span>
+        </div>
+      </div>
+
+      <!-- Quick Season Filter Pills -->
+      <div class="mb-5">
+        <p id="t-browse-season" class="text-xs font-semibold text-slate-400 uppercase mb-2 text-center">Or Browse by Season:</p>
+        <div class="flex flex-wrap justify-center gap-1.5">
+          <button onclick="filterBySeason('Spring')" id="btn-season-Spring" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-medium px-2.5 py-1 rounded-full border border-emerald-200 transition">🌸 Spring</button>
+          <button onclick="filterBySeason('Summer')" id="btn-season-Summer" class="bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-medium px-2.5 py-1 rounded-full border border-amber-200 transition">☀️ Summer</button>
+          <button onclick="filterBySeason('Autumn')" id="btn-season-Autumn" class="bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-1 rounded-full border border-orange-200 transition">🍂 Autumn</button>
+          <button onclick="filterBySeason('Winter')" id="btn-season-Winter" class="bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-medium px-2.5 py-1 rounded-full border border-sky-200 transition">❄️ Winter</button>
         </div>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex gap-2 mb-6">
         <button onclick="resetScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
-          <span id="t-btn-scan-again">🔄 Scan Again</span>
+          <span id="t-btn-scan-again">🔄 Reset</span>
         </button>
         <button onclick="openModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-3 rounded-xl transition text-xs sm:text-sm">
           <span id="t-btn-propose">➕ Propose Recipe</span>
@@ -67,30 +78,41 @@
       <section>
         <h2 id="t-heading-results" class="text-lg font-semibold mb-3 text-slate-700">Matching Recipes</h2>
         <div id="recipe-list" class="space-y-4">
-          <p id="t-empty-state" class="text-slate-400 text-sm text-center py-6">Scan a produce QR code above to see recipes you can make!</p>
+          <p id="t-empty-state" class="text-slate-400 text-sm text-center py-6">Scan a produce or seasonal QR code above to see recipes!</p>
         </div>
       </section>
     </div>
 
     <!-- ================= VIEW 2: IN-APP QR GENERATOR ================= -->
     <div id="viewGenerator" class="hidden">
-      <p id="t-gen-desc" class="text-sm text-slate-500 mb-4 text-center">Generate and print QR code labels for community wall produce</p>
+      <p id="t-gen-desc" class="text-sm text-slate-500 mb-4 text-center">Generate and print QR code labels for produce or seasonal posters</p>
 
-      <!-- Quick Preset Buttons -->
-      <div class="mb-4">
-        <p id="t-presets-label" class="text-xs font-semibold text-slate-400 uppercase mb-2">Quick Presets:</p>
+      <!-- Quick Produce Presets -->
+      <div class="mb-3">
+        <p id="t-presets-label" class="text-xs font-semibold text-slate-400 uppercase mb-1.5">Produce Presets:</p>
         <div class="flex flex-wrap justify-center gap-1.5">
-          <button onclick="setIngredient('Tomatoes')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Tomatoes</button>
-          <button onclick="setIngredient('Cucumbers')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Cucumbers</button>
-          <button onclick="setIngredient('Eggplant')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Eggplant</button>
-          <button onclick="setIngredient('Garlic')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Garlic</button>
+          <button onclick="setQRValue('Tomatoes', 'Tomatoes')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Tomatoes</button>
+          <button onclick="setQRValue('Cucumbers', 'Cucumbers')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Cucumbers</button>
+          <button onclick="setQRValue('Eggplant', 'Eggplant')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Eggplant</button>
+          <button onclick="setQRValue('Pumpkin', 'Pumpkin')" class="bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs px-2.5 py-1 rounded-lg border border-slate-200 transition">Pumpkin</button>
+        </div>
+      </div>
+
+      <!-- Quick Seasonal Poster Presets -->
+      <div class="mb-4">
+        <p id="t-season-presets-label" class="text-xs font-semibold text-slate-400 uppercase mb-1.5">Seasonal QR Codes:</p>
+        <div class="flex flex-wrap justify-center gap-1.5">
+          <button onclick="setQRValue('SEASON:Spring', '🌸 Spring Recipes')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-lg border border-emerald-200 transition">🌸 Spring</button>
+          <button onclick="setQRValue('SEASON:Summer', '☀️ Summer Recipes')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-lg border border-amber-200 transition">☀️ Summer</button>
+          <button onclick="setQRValue('SEASON:Autumn', '🍂 Autumn Recipes')" class="bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs px-2.5 py-1 rounded-lg border border-orange-200 transition">🍂 Autumn</button>
+          <button onclick="setQRValue('SEASON:Winter', '❄️ Winter Recipes')" class="bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs px-2.5 py-1 rounded-lg border border-sky-200 transition">❄️ Winter</button>
         </div>
       </div>
 
       <!-- Custom Input Field -->
       <div class="mb-4 flex gap-2">
-        <input type="text" id="ingredientInput" placeholder="Type ingredient name..." value="Tomatoes" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-        <button onclick="generateQR()" id="t-gen-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition">Generate</button>
+        <input type="text" id="ingredientInput" placeholder="Type ingredient or SEASON:Summer..." value="Tomatoes" class="flex-1 p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+        <button onclick="generateCustomQR()" id="t-gen-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition">Generate</button>
       </div>
 
       <!-- QR Display Box -->
@@ -106,7 +128,7 @@
 
   <!-- Proposal Modal -->
   <div id="proposalModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 relative">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
       <h3 id="t-modal-title" class="text-xl font-bold text-slate-800 mb-4">Propose a New Recipe</h3>
       
       <form action="https://api.web3forms.com/submit" method="POST" class="space-y-4">
@@ -115,6 +137,16 @@
         <div>
           <label id="t-label-title" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Recipe Title</label>
           <input type="text" name="title" required class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+        </div>
+        <div>
+          <label id="t-label-season" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Season</label>
+          <select name="season" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+            <option value="Spring">Spring</option>
+            <option value="Summer">Summer</option>
+            <option value="Autumn">Autumn</option>
+            <option value="Winter">Winter</option>
+            <option value="All Year" selected>All Year</option>
+          </select>
         </div>
         <div>
           <label id="t-label-ingredients" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Ingredients (comma separated)</label>
@@ -143,15 +175,18 @@
       en: {
         dir: "ltr",
         appSubtitle: "Shared Recipes",
-        appDesc: "Scan produce QR codes to find matching recipes",
-        scannedLabel: "Scanned Ingredient:",
-        btnScanAgain: "🔄 Scan Again",
+        appDesc: "Scan produce or seasonal QR codes to find matching recipes",
+        scannedLabel: "Scanned:",
+        seasonFilterLabel: "Season:",
+        browseSeason: "Or Browse by Season:",
+        btnScanAgain: "🔄 Reset",
         btnPropose: "➕ Propose Recipe",
         headingResults: "Matching Recipes",
-        emptyState: "Scan a produce QR code above to see recipes you can make!",
+        emptyState: "Scan a produce or seasonal QR code above to see recipes!",
         noMatch: "No exact recipes found for",
         modalTitle: "Propose a New Recipe",
         labelTitle: "Recipe Title",
+        labelSeason: "Season",
         labelIngredients: "Ingredients (comma separated)",
         labelInstructions: "Instructions",
         labelEmail: "Your Email",
@@ -162,23 +197,28 @@
         ingLabel: "Ingredients:",
         tabScan: "📷 Scan",
         tabGen: "🏷️ Generator",
-        genDesc: "Generate and print QR code labels for community wall produce",
-        presetsLabel: "Quick Presets:",
+        genDesc: "Generate and print QR code labels for produce or seasonal posters",
+        presetsLabel: "Produce Presets:",
+        seasonPresetsLabel: "Seasonal QR Codes:",
         genBtn: "Generate",
-        printBtn: "🖨️ Print Label"
+        printBtn: "🖨️ Print Label",
+        seasons: { Spring: "Spring", Summer: "Summer", Autumn: "Autumn", Winter: "Winter", "All Year": "All Year" }
       },
       nl: {
         dir: "ltr",
         appSubtitle: "Gedeelde Recepten",
-        appDesc: "Scan een QR-code om passende recepten te vinden",
-        scannedLabel: "Gescand ingrediënt:",
-        btnScanAgain: "🔄 Opnieuw Scannen",
+        appDesc: "Scan een product- of seizoens-QR-code om recepten te vinden",
+        scannedLabel: "Gescand:",
+        seasonFilterLabel: "Seizoen:",
+        browseSeason: "Of bekijk per seizoen:",
+        btnScanAgain: "🔄 Opnieuw",
         btnPropose: "➕ Recept Voorstellen",
         headingResults: "Passende Recepten",
         emptyState: "Scan een QR-code hierboven om recepten te zien!",
         noMatch: "Geen recepten gevonden voor",
         modalTitle: "Stel een nieuw recept voor",
         labelTitle: "Titel van recept",
+        labelSeason: "Seizoen",
         labelIngredients: "Ingrediënten (door komma's gescheiden)",
         labelInstructions: "Bereidingswijze",
         labelEmail: "Jouw E-mailadres",
@@ -189,23 +229,28 @@
         ingLabel: "Ingrediënten:",
         tabScan: "📷 Scan",
         tabGen: "🏷️ Generator",
-        genDesc: "Genereer en print QR-code labels voor de gemeenschappelijke muur",
-        presetsLabel: "Snelle knoppen:",
+        genDesc: "Genereer en print QR-code labels voor producten of seizoensposters",
+        presetsLabel: "Producten:",
+        seasonPresetsLabel: "Seizoens QR-codes:",
         genBtn: "Genereer",
-        printBtn: "🖨️ Label Printen"
+        printBtn: "🖨️ Label Printen",
+        seasons: { Spring: "Lente", Summer: "Zomer", Autumn: "Herfst", Winter: "Winter", "All Year": "Hele jaar" }
       },
       pl: {
         dir: "ltr",
         appSubtitle: "Wspólne Przepisy",
-        appDesc: "Zeskanuj kod QR produktu, aby znaleźć pasujące przepisy",
-        scannedLabel: "Zeskanowany składnik:",
-        btnScanAgain: "🔄 Zeskanuj ponownie",
+        appDesc: "Zeskanuj kod QR produktu lub pory roku, aby znaleźć przepisy",
+        scannedLabel: "Zeskanowano:",
+        seasonFilterLabel: "Pora roku:",
+        browseSeason: "Lub przeglądaj według pory roku:",
+        btnScanAgain: "🔄 Resetuj",
         btnPropose: "➕ Zaproponuj przepis",
         headingResults: "Pasujące przepisy",
-        emptyState: "Zeskanuj powyższy kod QR produktu, aby zobaczyć przepisy, które możesz przygotować!",
-        noMatch: "Nie znaleziono dokładnych przepisów dla",
+        emptyState: "Zeskanuj kod QR powyżej, aby zobaczyć przepisy!",
+        noMatch: "Nie znaleziono przepisów dla",
         modalTitle: "Zaproponuj nowy przepis",
         labelTitle: "Tytuł przepisu",
+        labelSeason: "Pora roku",
         labelIngredients: "Składniki (rozdzielone przecinkami)",
         labelInstructions: "Instrukcje przygotowania",
         labelEmail: "Twój adres e-mail",
@@ -216,50 +261,60 @@
         ingLabel: "Składniki:",
         tabScan: "📷 Skanuj",
         tabGen: "🏷️ Generator",
-        genDesc: "Wygeneruj i wydrukuj etykiety z kodem QR dla produktów",
-        presetsLabel: "Szybkie wybory:",
+        genDesc: "Wygeneruj i wydrukuj etykiety QR dla produktów lub plakatów sezonowych",
+        presetsLabel: "Produkty:",
+        seasonPresetsLabel: "Kody sezonowe:",
         genBtn: "Generuj",
-        printBtn: "🖨️ Drukuj etykietę"
+        printBtn: "🖨️ Drukuj etykietę",
+        seasons: { Spring: "Wiosna", Summer: "Lato", Autumn: "Jesień", Winter: "Zima", "All Year": "Cały rok" }
       },
       pap: {
         dir: "ltr",
         appSubtitle: "Reseta Kompartí",
-        appDesc: "Skani kódigo QR di produkto pa haña reseta ku ta djis ku ne",
-        scannedLabel: "Ingrediente skaniá:",
-        btnScanAgain: "🔄 Skani Atrobe",
+        appDesc: "Skani kódigo QR di produkto òf temporada pa haña reseta",
+        scannedLabel: "Skaniá:",
+        seasonFilterLabel: "Temporada:",
+        browseSeason: "Òf buska pa temporada:",
+        btnScanAgain: "🔄 Resèt",
         btnPropose: "➕ Proponé Reseta",
         headingResults: "Reseta ku Ta Pas",
-        emptyState: "Skani un kódigo QR ariba pa wak kual reseta bo por traha!",
-        noMatch: "No a haña reseta exacto pa",
+        emptyState: "Skani un kódigo QR ariba pa wak reseta!",
+        noMatch: "No a haña reseta pa",
         modalTitle: "Proponé un Reseta Nobo",
         labelTitle: "Título di Reseta",
+        labelSeason: "Temporada",
         labelIngredients: "Ingrediente (separá ku kòma)",
         labelInstructions: "Instrukshon",
         labelEmail: "Bo Korreo Elektróniko",
         btnCancel: "Kanselá",
-        btnSubmit: "Manda pa Rapidó",
-        catMeal: "Kualkier Kuminda",
+        btnSubmit: "Manda pa Revisá",
+        catMeal: "Kuminda",
         catConservation: "Konserva",
         ingLabel: "Ingrediente:",
         tabScan: "📷 Skani",
         tabGen: "🏷️ Kreador",
-        genDesc: "Generá i imprimi etiketa di kódigo QR pa produkto di muraya di komunidat",
-        presetsLabel: "Opcion Rápido:",
+        genDesc: "Generá i imprimi etiketa di QR pa produkto òf temporada",
+        presetsLabel: "Produkto:",
+        seasonPresetsLabel: "Kódigo di Temporada:",
         genBtn: "Generá",
-        printBtn: "🖨️ Imprimi Etiketa"
+        printBtn: "🖨️ Imprimi Etiketa",
+        seasons: { Spring: "Primavera", Summer: "Zomer", Autumn: "Otonjo", Winter: "Wenter", "All Year": "Henter Aña" }
       },
       tr: {
         dir: "ltr",
         appSubtitle: "Paylaşılan Tarifler",
-        appDesc: "Uygun tarifleri bulmak için QR kodunu tarayın",
-        scannedLabel: "Taranan Malzeme:",
-        btnScanAgain: "🔄 Tekrar Tara",
+        appDesc: "Tarifleri bulmak için ürün veya mevsim QR kodunu tarayın",
+        scannedLabel: "Taranan:",
+        seasonFilterLabel: "Mevsim:",
+        browseSeason: "Veya mevsime göre göz atın:",
+        btnScanAgain: "🔄 Sıfırla",
         btnPropose: "➕ Tarif Öner",
         headingResults: "Uygun Tarifler",
-        emptyState: "Yapabileceğiniz tarifleri görmek için yukarıdaki QR kodunu tarayın!",
+        emptyState: "Tarifleri görmek için yukarıdaki QR kodunu tarayın!",
         noMatch: "Şunun için tarif bulunamadı:",
         modalTitle: "Yeni Bir Tarif Önerin",
         labelTitle: "Tarif Başlığı",
+        labelSeason: "Mevsim",
         labelIngredients: "Malzemeler (virgülle ayrılmış)",
         labelInstructions: "Hazırlanışı",
         labelEmail: "E-posta Adresiniz",
@@ -270,23 +325,28 @@
         ingLabel: "Malzemeler:",
         tabScan: "📷 Tara",
         tabGen: "🏷️ Oluşturucu",
-        genDesc: "Topluluk duvarı ürünleri için QR kod etiketleri oluşturun ve yazdırın",
-        presetsLabel: "Hızlı Seçim:",
+        genDesc: "Ürünler veya mevsimlik afişler için QR kod etiketleri oluşturun",
+        presetsLabel: "Ürünler:",
+        seasonPresetsLabel: "Mevsim QR Kodları:",
         genBtn: "Oluştur",
-        printBtn: "🖨️ Etiketi Yazdır"
+        printBtn: "🖨️ Etiketi Yazdır",
+        seasons: { Spring: "İlkbahar", Summer: "Yaz", Autumn: "Sonbahar", Winter: "Kış", "All Year": "Tüm Yıl" }
       },
       ar: {
         dir: "rtl",
         appSubtitle: "الوصفات المشتركة",
-        appDesc: "امسح رمز QR الخاص بالمنتج للعثور على وصفات مناسبة",
-        scannedLabel: "المكون الممسوح:",
-        btnScanAgain: "🔄 المسح مجدداً",
+        appDesc: "امسح رمز QR للمنتج أو الموسم للعثور على وصفات مناسبة",
+        scannedLabel: "تم المسح:",
+        seasonFilterLabel: "الموسم:",
+        browseSeason: "أو تصفح حسب الموسم:",
+        btnScanAgain: "🔄 إعادة ضبط",
         btnPropose: "➕ اقتراح وصفة",
         headingResults: "الوصفات المطابقة",
-        emptyState: "امسح رمز QR أعلاه لعرض الوصفات التي يمكنك تحضيرها!",
+        emptyState: "امسح رمز QR أعلاه لعرض الوصفات!",
         noMatch: "لم يتم العثور على وصفات لـ",
         modalTitle: "اقترح وصفة جديدة",
         labelTitle: "عنوان الوصفة",
+        labelSeason: "الموسم",
         labelIngredients: "المكونات (مفصولة بفاصلة)",
         labelInstructions: "طريقة التحضير",
         labelEmail: "بريدك الإلكتروني",
@@ -297,23 +357,28 @@
         ingLabel: "المكونات:",
         tabScan: "📷 مسح",
         tabGen: "🏷️ مولد الرموز",
-        genDesc: "إنشاء وطباعة ملصقات QR لمنتجات حائط المجتمع",
-        presetsLabel: "اختصارات سريعة:",
+        genDesc: "إنشاء وطباعة ملصقات QR للمنتجات أو الملصقات الموسمية",
+        presetsLabel: "منتجات سريعة:",
+        seasonPresetsLabel: "رموز المواسم:",
         genBtn: "توليد",
-        printBtn: "🖨️ طباعة الملصق"
+        printBtn: "🖨️ طباعة الملصق",
+        seasons: { Spring: "الربيع", Summer: "الصيف", Autumn: "الخريف", Winter: "الشتاء", "All Year": "طوال العام" }
       },
       ary: {
         dir: "rtl",
         appSubtitle: "الوصفات المشتركة",
-        appDesc: "سكاني الكود ديال الخضرة باش تلقى وصفات مناسبة",
-        scannedLabel: "الخضرة المكتشفة:",
-        btnScanAgain: "🔄 سكاني من جديد",
+        appDesc: "سكاني الكود ديال الخضرة أو الفصل باش تلقى الوصفات",
+        scannedLabel: "تسكاني:",
+        seasonFilterLabel: "الفصل:",
+        browseSeason: "أو قلب على حساب الفصل:",
+        btnScanAgain: "🔄 عاود من اللول",
         btnPropose: "➕ اقترح وصفة",
         headingResults: "الوصفات المتاحة",
-        emptyState: "سكاني كود QR الفوق باش تشوف أشنو تقدر تطيب!",
+        emptyState: "سكاني كود QR الفوق باش تشوف الوصفات!",
         noMatch: "ما لقينا حتى وصفة لـ",
         modalTitle: "اقترح وصفة جديدة",
         labelTitle: "سمية الوصفة",
+        labelSeason: "الفصل",
         labelIngredients: "المقادير (مفرقين بفاصلة)",
         labelInstructions: "طريقة التحضير",
         labelEmail: "الجيمايل ديالك",
@@ -324,26 +389,21 @@
         ingLabel: "المقادير:",
         tabScan: "📷 سكاني",
         tabGen: "🏷️ توليد الكود",
-        genDesc: "صاوب وطبع ليزيكيت د QR للثلاجة أو الحائط التضامني",
+        genDesc: "صاوب وطبع ليزيكيت د QR للخضرة أو الفصول",
         presetsLabel: "خضرة جاهزة:",
+        seasonPresetsLabel: "كودات الفصول:",
         genBtn: "صاوب",
-        printBtn: "🖨️ طبع الإيكيت"
+        printBtn: "🖨️ طبع الإيكيت",
+        seasons: { Spring: "الربيع", Summer: "الصيف", Autumn: "الخريف", Winter: "الشتا", "All Year": "العام كامل" }
       }
     };
 
-    // 2. Multilingual Recipes Database
+    // 2. Multilingual Recipes Database with Seasonal Classification
     const recipes = [
       {
-        title: { 
-          en: "Pickles", 
-          nl: "Augurken / Inmaken", 
-          pl: "Ogórki kiszone / Konserwowe", 
-          pap: "Pikkel / Konserva", 
-          tr: "Turşu", 
-          ar: "مخلل", 
-          ary: "مخلل (ترشي)" 
-        },
+        title: { en: "Pickles", nl: "Augurken / Inmaken", pl: "Ogórki konserwowe", pap: "Pikkel / Konserva", tr: "Turşu", ar: "مخلل", ary: "مخلل (ترشي)" },
         category: "Conservation",
+        season: "Summer",
         ingredients: {
           en: ["Cucumbers", "Vinegar", "Water", "Salt", "Garlic", "Dill"],
           nl: ["Komkommer", "Azijn", "Water", "Zout", "Knoflook", "Dille"],
@@ -357,28 +417,21 @@
           en: "Boil vinegar, water, and salt. Pack cucumbers and garlic into jars, pour hot liquid over, and seal tightly.",
           nl: "Kook de azijn, het water en het zout. Vul potten met komkommer en knoflook, giet de hete vloeistof erover en sluit af.",
           pl: "Zagotuj ocet, wodę i sól. Włóż ogórki i czosnek do słoików, zalej gorącym płynem i szczelnie zamknij.",
-          pap: "Bulbin binager, awa i salu. Pone kukamber i ajo den fras, basha likido kayente riba dje i sera bon kibrá.",
+          pap: "Herbé binager, awa i salu. Pone kukamber i ajo den pòchi, basha likido kayente riba dje i sera bon.",
           tr: "Sirke, su ve tuzu kaynatın. Salatalık ve sarımsakları kavanozlara doldurun, üzerine sıcak sıvıyı döküp sıkıca kapatın.",
           ar: "اغلي الخل والماء والملح. ضع الخيار والثوم في برطمانات، وصب السائل الساخن فوقها وأغلقها بإحكام.",
           ary: "غلي الخل والما والملحة. دير الخيار والثومة فقرعات د الزجاج، كب عليهم الخليط سخون وسد القرعة مزيان."
         }
       },
       {
-        title: { 
-          en: "Tomato Sauce", 
-          nl: "Tomatensaus", 
-          pl: "Sos pomidorowy", 
-          pap: "Salsa di Tomati", 
-          tr: "Domates Sosu", 
-          ar: "صلصة طماطم", 
-          ary: "لاصوص د الطماطيش" 
-        },
+        title: { en: "Tomato Sauce", nl: "Tomatensaus", pl: "Sos pomidorowy", pap: "Salsa di Tomati", tr: "Domates Sosu", ar: "صلصة طماطم", ary: "لاصوص د الطماطيش" },
         category: "Conservation",
+        season: "Summer",
         ingredients: {
           en: ["Tomatoes", "Olive Oil", "Garlic", "Onion", "Salt", "Basil"],
           nl: ["Tomaten", "Olijfolie", "Knoflook", "Ui", "Zout", "Basilicum"],
           pl: ["Pomidory", "Oliwa z oliwek", "Czosnek", "Cebula", "Sól", "Bazylia"],
-          pap: ["Tomati", "Oliwa di Oliv", "Ajo", "Koyo", "Salu", "Basilchi"],
+          pap: ["Tomati", "Azeta di Oleifi", "Ajo", "Siboyo", "Salu", "Basilchi"],
           tr: ["Domates", "Zeytinyağı", "Sarımsak", "Soğan", "Tuz", "Fesleğen"],
           ar: ["طماطم", "زيت زيتون", "ثوم", "بصل", "ملح", "حبق"],
           ary: ["طماطيش", "زيت البلدية", "ثومة", "بصلة", "ملحة", "حبق"]
@@ -387,28 +440,21 @@
           en: "Simmer crushed tomatoes with sautéed garlic and onion for 45 mins. Blend until smooth and store.",
           nl: "Laat geplette tomaten met gefruite knoflook en ui 45 minuten sudderen. Pureer tot een gladde saus.",
           pl: "Gotuj rozgniecione pomidory z podsmażonym czosnkiem i cebulą przez 45 minut. Zblenduj na gładko i przechowuj.",
-          pap: "Simmer tomati crush ku ajo i koyo sofria pa 45 minüt. Blend te ora e ta suave i warda.",
-          tr: "Ezilmiş domatesleri soteelenmiş sarımsak ve soğanla 45 dakika kısık ateşte pişirin. Pürüzsüz olana kadar karıştırın.",
+          pap: "Kushina tomati machiká ku ajo i siboyo hasá pa 45 minüt. Blend te ora e bira suave i warda.",
+          tr: "Ezilmiş domatesleri sotelenmiş sarımsak ve soğanla 45 dakika kısık ateşte pişirin. Pürüzsüz olana kadar karıştırın.",
           ar: "اترك الطماطم المهروسة تطهى على نار هادئة مع الثوم والبصل المحمر لمدة 45 دقيقة. اخلطها حتى تصبح ناعمة.",
           ary: "طيب الطماطيش مطحونة مع الثومة والبصلة في الزيت لمدة 45 دقيقة. طحن كلشي مزيان ونقصها فقرعات."
         }
       },
       {
-        title: { 
-          en: "Pasta alla Norma", 
-          nl: "Pasta alla Norma", 
-          pl: "Pasta alla Norma", 
-          pap: "Pasta alla Norma", 
-          tr: "Patlıcanlı Makarna", 
-          ar: "باستا بالباذنجان", 
-          ary: "باستا بالدنجال" 
-        },
+        title: { en: "Pasta alla Norma", nl: "Pasta alla Norma", pl: "Pasta alla Norma", pap: "Pasta alla Norma", tr: "Patlıcanlı Makarna", ar: "باستا بالباذنجان", ary: "باستا بالدنجال" },
         category: "Meal",
+        season: "Summer",
         ingredients: {
           en: ["Pasta", "Eggplant", "Tomatoes", "Garlic", "Cheese", "Basil"],
           nl: ["Pasta", "Aubergine", "Tomaten", "Knoflook", "Kaas", "Basilicum"],
           pl: ["Makaron", "Bakłażan", "Pomidory", "Czosnek", "Ser", "Bazylia"],
-          pap: ["Pasta", "Berenzenchi", "Tomati", "Ajo", "Keso", "Basilchi"],
+          pap: ["Pasta", "Berenjena", "Tomati", "Ajo", "Keshi", "Basilchi"],
           tr: ["Makarna", "Patlıcan", "Domates", "Sarımsak", "Peynir", "Fesleğen"],
           ar: ["معكرونة", "باذنجان", "طماطم", "ثوم", "جبن", "حبق"],
           ary: ["مقرونية", "دنجال", "طماطيش", "ثومة", "فرماج", "حبق"]
@@ -416,18 +462,95 @@
         instructions: {
           en: "Fry cubed eggplant. Make a basic garlic tomato sauce. Toss cooked pasta with sauce, top with fried eggplant and cheese.",
           nl: "Bak blokjes aubergine. Maak een knoflook-tomatensaus. Meng de gekookte pasta met saus en voeg aubergine en kaas toe.",
-          pl: "Usmaż pokrojonego w kostkę bakłażana. Zrób prosty sos pomidorowy z czosnkiem. Wymieszaj ugotowany makaron z sosem, posyp smażonym bakłażanem i serem.",
-          pap: "Fray berenzenchi na kùbi. Traha un salsa di tomati simpel ku ajo. Miskla pasta kushiná ku salsa, pone berenzenchi fritá i keso riba dje.",
+          pl: "Usmaż pokrojonego w kostkę bakłażana. Zrób prosty sos pomidorowy z czosnkiem. Wymieszaj makaron z sosem, dodaj bakłażana i ser.",
+          pap: "Hasa berenjena na kùbi. Traha un salsa di tomati ku ajo. Miskla pasta kushiná ku salsa, pone berenjena i keshi riba dje.",
           tr: "Küp şeklinde doğranmış patlıcanları kızartın. Domates ve sarımsaklı sos hazırlayın. Makarnayı sosla karıştırıp servis edin.",
           ar: "اقلي مكعبات الباذنجان. حضر صلصة طماطم وثوم بسيطة. اخلط المعكرونة المطبوخة مع الصلصة وقم بتزيينها بالباذنجان والجبن.",
           ary: "قلي الدنجال مربعات. صاوب لاصوص طماطيش بالثومة. خلط المقرونية مع لاصوص وزيد الدنجال مقلي والفرماج من الفوق."
+        }
+      },
+      {
+        title: { en: "Roasted Pumpkin Soup", nl: "Geroosterde Pompoensoep", pl: "Zupa krem z pieczonej dyni", pap: "Sòpi di Pampuna Hasá", tr: "Közlenmiş Balkabağı Çorbası", ar: "شوربة اليقطين المشوي", ary: "صوبة د القرعة الحمراء" },
+        category: "Meal",
+        season: "Autumn",
+        ingredients: {
+          en: ["Pumpkin", "Onion", "Garlic", "Olive Oil", "Salt", "Black Pepper"],
+          nl: ["Pompoen", "Ui", "Knoflook", "Olijfolie", "Zout", "Zwarte peper"],
+          pl: ["Dynia", "Cebula", "Czosnek", "Oliwa z oliwek", "Sól", "Czarny pieprz"],
+          pap: ["Pampuna", "Siboyo", "Ajo", "Azeta di Oleifi", "Salu", "Peper Pretu"],
+          tr: ["Balkabağı", "Soğan", "Sarımsak", "Zeytinyağı", "Tuz", "Karabiber"],
+          ar: ["يقطين", "بصل", "ثوم", "زيت زيتون", "ملح", "فلفل أسود"],
+          ary: ["قرعة حمراء", "بصلة", "ثومة", "زيت البلدية", "ملحة", "بزار"]
+        },
+        instructions: {
+          en: "Roast cubed pumpkin, onion, and garlic with olive oil for 30 mins. Blend with warm water or broth until creamy.",
+          nl: "Rooster blokjes pompoen, ui en knoflook 30 minuten met olijfolie. Pureer met warm water of bouillon tot een romige soep.",
+          pl: "Piecz pokrojoną dynię, cebulę i czosnek z oliwą przez 30 minut. Zblenduj z ciepłą wodą lub bulionem na krem.",
+          pap: "Hasa pampuna na kùbi, siboyo i ajo ku azeta pa 30 minüt. Blend ku awa kayente te ora e bira krema.",
+          tr: "Küp doğranmış balkabağı, soğan ve sarımsağı zeytinyağı ile 30 dakika fırınlayın. Sıcak su ile pürüzsüz olana kadar çekin.",
+          ar: "اشوِ مكعبات اليقطين والبصل والثوم مع زيت الزيتون لمدة 30 دقيقة. اخلطها مع الماء الدافئ حتى تصبح ناعمة.",
+          ary: "حمر القرعة مقطعة مع البصلة والثومة وزيت البلدية فالفران 30 دقيقة. طحنهم مع الما سخون حتى تولي صوبة خاترة."
+        }
+      },
+      {
+        title: { en: "Winter Root Vegetable Stew", nl: "Winterse Stoofpot", pl: "Zimowy gulasz warzywny", pap: "Stobá di Bèrdura di Wenter", tr: "Kış Sebzeleri Güveci", ar: "يخنة خضروات الشتاء", ary: "طاجين خضرة الشتاء" },
+        category: "Meal",
+        season: "Winter",
+        ingredients: {
+          en: ["Carrots", "Potatoes", "Onion", "Garlic", "Olive Oil", "Salt"],
+          nl: ["Wortels", "Aardappelen", "Ui", "Knoflook", "Olijfolie", "Zout"],
+          pl: ["Marchew", "Ziemniaki", "Cebula", "Czosnek", "Oliwa z oliwek", "Sól"],
+          pap: ["Wòrtel", "Batata", "Siboyo", "Ajo", "Azeta di Oleifi", "Salu"],
+          tr: ["Havuç", "Patates", "Soğan", "Sarımsak", "Zeytinyağı", "Tuz"],
+          ar: ["جزر", "بطاطس", "بصل", "ثوم", "زيت زيتون", "ملح"],
+          ary: ["خيزو", "بطاطا", "بصلة", "ثومة", "زيت البلدية", "ملحة"]
+        },
+        instructions: {
+          en: "Sauté chopped onion and garlic. Add cubed carrots and potatoes, cover with water, and simmer for 35 mins until tender.",
+          nl: "Fruit gesnipperde ui en knoflook. Voeg blokjes wortel en aardappel toe, voeg water toe en laat 35 minuten zachtjes koken.",
+          pl: "Podsmaż cebulę i czosnek. Dodaj pokrojoną marchew i ziemniaki, zalej wodą i duś przez 35 minut do miękkości.",
+          pap: "Hasa siboyo i ajo. Agregá wòrtel i batata na kùbi, tapa ku awa i laga kushina 35 minüt te ora nan ta moli.",
+          tr: "Doğranmış soğan ve sarımsağı soteleyin. Küp doğranmış havuç ve patatesleri ekleyin, üzerini geçecek kadar su koyup 35 dakika pişirin.",
+          ar: "شوّح البصل المفروم والثوم. أضف مكعبات الجزر والبطاطس، واغمرها بالماء واتركها على نار هادئة لمدة 35 دقيقة.",
+          ary: "شحر البصلة والثومة. زيد خيزو وبطاطا مقطعين، غطيهم بالما وخليهم يطيبو على نار مهيلة 35 دقيقة."
+        }
+      },
+      {
+        title: { en: "Spring Herb & Radish Salad", nl: "Lente Kruiden & Radijs Salade", pl: "Wiosenna sałatka z rzodkiewką", pap: "Salada di Primavera", tr: "Bahar Otları ve Turp Salatası", ar: "سلطة أعشاب الربيع والفجل", ary: "شلاضة د الربيع والفجل" },
+        category: "Meal",
+        season: "Spring",
+        ingredients: {
+          en: ["Radishes", "Cucumbers", "Olive Oil", "Salt", "Dill"],
+          nl: ["Radijs", "Komkommer", "Olijfolie", "Zout", "Dille"],
+          pl: ["Rzodkiewka", "Ogórki", "Oliwa z oliwek", "Sól", "Koper"],
+          pap: ["Raban", "Kukamber", "Azeta di Oleifi", "Salu", "Dill"],
+          tr: ["Turp", "Salatalık", "Zeytinyağı", "Tuz", "Dereotu"],
+          ar: ["فجل", "خيار", "زيت زيتون", "ملح", "شبت"],
+          ary: ["فجل", "خيار", "زيت البلدية", "ملحة", "قزبور"]
+        },
+        instructions: {
+          en: "Thinly slice radishes and cucumbers. Toss with fresh chopped herbs, olive oil, and a pinch of salt.",
+          nl: "Snijd radijs en komkommer in dunne plakjes. Meng met verse kruiden, olijfolie en een snufje zout.",
+          pl: "Pokrój cienko rzodkiewkę i ogórki. Wymieszaj ze świeżymi ziołami, oliwą z oliwek i szczyptą soli.",
+          pap: "Kòrta raban i kukamber fini. Miskla ku yerba fresku, azeta di oleifi i un tiki salu.",
+          tr: "Turp ve salatalıkları ince ince dilimleyin. Taze doğranmış otlar, zeytinyağı ve bir tutam tuz ile harmanlayın.",
+          ar: "قطّع الفجل والخيار إلى شرائح رفيعة. اخلطها مع الأعشاب الطازجة المفرومة وزيت الزيتون ورشة ملح.",
+          ary: "قطع الفجل والخيار طريفات رقاق. خلطهم مع الربيع مقطع، زيت البلدية وشوية د الملحة."
         }
       }
     ];
 
     let currentLang = "en";
-    let lastScannedItem = "";
+    let activeFilter = { type: null, value: "" }; // type: 'ingredient' | 'season'
     let qrCodeInst = null;
+
+    const seasonIcons = {
+      Spring: "🌸",
+      Summer: "☀️",
+      Autumn: "🍂",
+      Winter: "❄️",
+      "All Year": "🌍"
+    };
 
     function changeLanguage(lang) {
       currentLang = lang;
@@ -438,12 +561,13 @@
       // Update UI Texts
       document.getElementById("t-app-subtitle").innerText = t.appSubtitle;
       document.getElementById("t-app-desc").innerText = t.appDesc;
-      document.getElementById("t-scanned-label").innerText = t.scannedLabel;
+      document.getElementById("t-browse-season").innerText = t.browseSeason;
       document.getElementById("t-btn-scan-again").innerText = t.btnScanAgain;
       document.getElementById("t-btn-propose").innerText = t.btnPropose;
       document.getElementById("t-heading-results").innerText = t.headingResults;
       document.getElementById("t-modal-title").innerText = t.modalTitle;
       document.getElementById("t-label-title").innerText = t.labelTitle;
+      document.getElementById("t-label-season").innerText = t.labelSeason;
       document.getElementById("t-label-ingredients").innerText = t.labelIngredients;
       document.getElementById("t-label-instructions").innerText = t.labelInstructions;
       document.getElementById("t-label-email").innerText = t.labelEmail;
@@ -453,11 +577,21 @@
       document.getElementById("tabGeneratorBtn").innerText = t.tabGen;
       document.getElementById("t-gen-desc").innerText = t.genDesc;
       document.getElementById("t-presets-label").innerText = t.presetsLabel;
+      document.getElementById("t-season-presets-label").innerText = t.seasonPresetsLabel;
       document.getElementById("t-gen-btn").innerText = t.genBtn;
       document.getElementById("t-print-btn").innerText = t.printBtn;
 
-      if (lastScannedItem) {
-        filterRecipes(lastScannedItem);
+      // Update Season Quick Filter Buttons
+      ["Spring", "Summer", "Autumn", "Winter"].forEach(s => {
+        const btn = document.getElementById(`btn-season-${s}`);
+        if (btn) btn.innerText = `${seasonIcons[s]} ${t.seasons[s]}`;
+      });
+
+      // Re-render current filter if active
+      if (activeFilter.type === "ingredient") {
+        filterRecipes(activeFilter.value);
+      } else if (activeFilter.type === "season") {
+        filterBySeason(activeFilter.value);
       } else {
         document.getElementById("recipe-list").innerHTML = `<p class="text-slate-400 text-sm text-center py-6">${t.emptyState}</p>`;
       }
@@ -480,7 +614,6 @@
         genBtn.className = "text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
         scanBtn.className = "text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition";
         
-        // Initialize generator preview if not already done
         if (!qrCodeInst) {
           qrCodeInst = new QRCode(document.getElementById("qrcode"), {
             text: "Tomatoes",
@@ -494,42 +627,87 @@
       }
     }
 
-    function generateQR() {
-      const val = document.getElementById("ingredientInput").value.trim();
-      if (val) {
-        document.getElementById("labelDisplay").innerText = val;
-        if (qrCodeInst) {
-          qrCodeInst.clear();
-          qrCodeInst.makeCode(val);
-        }
+    function setQRValue(qrPayload, displayLabel) {
+      document.getElementById("ingredientInput").value = qrPayload;
+      document.getElementById("labelDisplay").innerText = displayLabel;
+      if (qrCodeInst) {
+        qrCodeInst.clear();
+        qrCodeInst.makeCode(qrPayload);
       }
     }
 
-    function setIngredient(name) {
-      document.getElementById("ingredientInput").value = name;
-      generateQR();
+    function generateCustomQR() {
+      const val = document.getElementById("ingredientInput").value.trim();
+      if (val) {
+        const cleanLabel = val.toUpperCase().startsWith("SEASON:") 
+          ? `${seasonIcons[val.split(":")[1].trim()] || "🌱"} ${val.split(":")[1].trim()} Recipes` 
+          : val;
+        setQRValue(val, cleanLabel);
+      }
     }
 
-    function onScanSuccess(decodedText, decodedResult) {
-      lastScannedItem = decodedText.trim();
-      document.getElementById("ingredient-name").innerText = lastScannedItem;
+    function onScanSuccess(decodedText) {
+      const scanned = decodedText.trim();
+      
+      // Check if QR code is a seasonal code (e.g., "SEASON:Summer" or URL with ?season=Summer)
+      if (scanned.toUpperCase().startsWith("SEASON:")) {
+        const seasonName = scanned.split(":")[1].trim();
+        const normalizedSeason = seasonName.charAt(0).toUpperCase() + seasonName.slice(1).toLowerCase();
+        filterBySeason(normalizedSeason);
+      } else if (scanned.includes("season=")) {
+        const urlParams = new URLSearchParams(scanned.split("?")[1]);
+        const seasonParam = urlParams.get("season");
+        if (seasonParam) {
+          const normalizedSeason = seasonParam.charAt(0).toUpperCase() + seasonParam.slice(1).toLowerCase();
+          filterBySeason(normalizedSeason);
+        }
+      } else {
+        filterRecipes(scanned);
+      }
+    }
+
+    function filterBySeason(season) {
+      activeFilter = { type: "season", value: season };
+      const t = translations[currentLang];
+      const translatedSeason = t.seasons[season] || season;
+      const icon = seasonIcons[season] || "🌱";
+
+      document.getElementById("t-scanned-label").innerText = t.seasonFilterLabel;
+      document.getElementById("ingredient-name").innerText = `${icon} ${translatedSeason}`;
       document.getElementById("scanned-result").classList.remove("hidden");
 
-      filterRecipes(lastScannedItem);
+      const matched = recipes.filter(r => 
+        r.season.toLowerCase() === season.toLowerCase() || r.season === "All Year"
+      );
+      renderRecipeCards(matched, translatedSeason);
     }
 
     function filterRecipes(ingredient) {
+      activeFilter = { type: "ingredient", value: ingredient };
+      const t = translations[currentLang];
+
+      document.getElementById("t-scanned-label").innerText = t.scannedLabel;
+      document.getElementById("ingredient-name").innerText = ingredient;
+      document.getElementById("scanned-result").classList.remove("hidden");
+
+      // Match across current language AND English fallback so English QR codes work in any selected language
+      const matched = recipes.filter(r => {
+        const langIngredients = r.ingredients[currentLang] || [];
+        const enIngredients = r.ingredients["en"] || [];
+        const combined = [...new Set([...langIngredients, ...enIngredients])];
+        return combined.some(i => i.toLowerCase().includes(ingredient.toLowerCase()));
+      });
+
+      renderRecipeCards(matched, ingredient);
+    }
+
+    function renderRecipeCards(matched, queryLabel) {
       const listContainer = document.getElementById("recipe-list");
       listContainer.innerHTML = "";
       const t = translations[currentLang];
 
-      const matched = recipes.filter(r => {
-        const langIngredients = r.ingredients[currentLang] || r.ingredients["en"];
-        return langIngredients.some(i => i.toLowerCase().includes(ingredient.toLowerCase()));
-      });
-
       if (matched.length === 0) {
-        listContainer.innerHTML = `<p class="text-slate-500 text-sm text-center py-4">${t.noMatch} "${ingredient}".</p>`;
+        listContainer.innerHTML = `<p class="text-slate-500 text-sm text-center py-4">${t.noMatch} "${queryLabel}".</p>`;
         return;
       }
 
@@ -540,11 +718,15 @@
         const ingredientsList = (r.ingredients[currentLang] || r.ingredients["en"]).join(", ");
         const instructionsText = r.instructions[currentLang] || r.instructions["en"];
         const categoryBadge = r.category === "Meal" ? t.catMeal : t.catConservation;
+        const seasonBadge = `${seasonIcons[r.season] || "🌱"} ${t.seasons[r.season] || r.season}`;
 
         card.innerHTML = `
-          <div class="flex justify-between items-center mb-1">
+          <div class="flex justify-between items-start gap-2 mb-1.5">
             <h3 class="font-bold text-slate-800">${titleText}</h3>
-            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">${categoryBadge}</span>
+            <div class="flex flex-wrap gap-1 shrink-0">
+              <span class="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">${seasonBadge}</span>
+              <span class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">${categoryBadge}</span>
+            </div>
           </div>
           <p class="text-xs text-slate-500 mb-2 font-medium">${t.ingLabel} ${ingredientsList}</p>
           <p class="text-sm text-slate-600">${instructionsText}</p>
@@ -554,7 +736,7 @@
     }
 
     function resetScanner() {
-      lastScannedItem = "";
+      activeFilter = { type: null, value: "" };
       document.getElementById("scanned-result").classList.add("hidden");
       document.getElementById("recipe-list").innerHTML = `<p class="text-slate-400 text-sm text-center py-6">${translations[currentLang].emptyState}</p>`;
     }
@@ -563,6 +745,14 @@
     function closeModal() { document.getElementById("proposalModal").classList.add("hidden"); }
 
     window.addEventListener("load", () => {
+      // Support opening directly via seasonal URL link (e.g., index.html?season=Summer)
+      const params = new URLSearchParams(window.location.search);
+      const urlSeason = params.get("season");
+      if (urlSeason) {
+        const normalizedSeason = urlSeason.charAt(0).toUpperCase() + urlSeason.slice(1).toLowerCase();
+        filterBySeason(normalizedSeason);
+      }
+
       const html5QrCode = new Html5Qrcode("reader");
       html5QrCode.start(
         { facingMode: "environment" },
