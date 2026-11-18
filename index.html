@@ -20,7 +20,7 @@
     <!-- Top Controls: Language & View Mode Toggle -->
     <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-3 gap-2">
       <!-- Language Selector -->
-      <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+      <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none">
         <option value="en" selected>English</option>
         <option value="nl">Nederlands</option>
         <option value="pl">Polski</option>
@@ -30,10 +30,11 @@
         <option value="ary">الدارجة</option>
       </select>
 
-      <!-- Tab Switcher (Scanner vs Generator) -->
+      <!-- Tab Switcher (Scanner vs Zine vs Generator) -->
       <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-300">
-        <button id="tabScannerBtn" onclick="switchTab('scanner')" class="text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition">📷 Scan</button>
-        <button id="tabGeneratorBtn" onclick="switchTab('generator')" class="text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition">🏷️ Generator</button>
+        <button id="tabScannerBtn" onclick="switchTab('scanner')" class="text-xs font-semibold px-2.5 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition">📷 Scan</button>
+        <button id="tabPdfBtn" onclick="switchTab('pdf')" class="text-xs font-semibold px-2.5 py-1 rounded-md text-slate-600 transition">📄 Zine</button>
+        <button id="tabGeneratorBtn" onclick="switchTab('generator')" class="text-xs font-semibold px-2.5 py-1 rounded-md text-slate-600 transition">🏷️ Generator</button>
       </div>
     </div>
 
@@ -90,7 +91,15 @@
       </section>
     </div>
 
-    <!-- ================= VIEW 2: IN-APP QR GENERATOR ================= -->
+    <!-- ================= VIEW 2: PDF / ZINE VIEWER ================= -->
+    <div id="viewPdf" class="hidden">
+      <p id="t-pdf-desc" class="text-sm text-slate-500 mb-3 text-center">Browse our community recipe zine</p>
+      <div class="w-full h-[520px] border border-slate-200 rounded-xl overflow-hidden bg-slate-100 shadow-inner">
+        <iframe src="Group 6 Zine.pdf#view=FitH" class="w-full h-full" frameborder="0"></iframe>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 3: IN-APP QR GENERATOR ================= -->
     <div id="viewGenerator" class="hidden">
       <p id="t-gen-desc" class="text-sm text-slate-500 mb-4 text-center">Generate and print QR code labels for produce or seasonal posters</p>
 
@@ -210,7 +219,9 @@
         catConservation: "Conservation",
         ingLabel: "Ingredients:",
         tabScan: "📷 Scan",
+        tabPdf: "📄 Zine",
         tabGen: "🏷️ Generator",
+        pdfDesc: "Browse our community recipe zine",
         genDesc: "Generate and print QR code labels for produce or seasonal posters",
         presetsLabel: "Produce Presets:",
         seasonPresetsLabel: "Seasonal QR Codes:",
@@ -243,7 +254,9 @@
         catConservation: "Conserveren",
         ingLabel: "Ingrediënten:",
         tabScan: "📷 Scan",
+        tabPdf: "📄 Zine",
         tabGen: "🏷️ Generator",
+        pdfDesc: "Blader door ons receptenmagazine",
         genDesc: "Genereer en print QR-code labels voor producten of seizoensposters",
         presetsLabel: "Producten:",
         seasonPresetsLabel: "Seizoens QR-codes:",
@@ -276,7 +289,9 @@
         catConservation: "Przetwory",
         ingLabel: "Składniki:",
         tabScan: "📷 Skanuj",
+        tabPdf: "📄 Zine",
         tabGen: "🏷️ Generator",
+        pdfDesc: "Przeglądaj nasz biuletyn z przepisami",
         genDesc: "Wygeneruj i wydrukuj etykiety QR dla produktów lub plakatów sezonowych",
         presetsLabel: "Produkty:",
         seasonPresetsLabel: "Kody sezonowe:",
@@ -309,7 +324,9 @@
         catConservation: "Konserva",
         ingLabel: "Ingrediente:",
         tabScan: "📷 Skani",
+        tabPdf: "📄 Zine",
         tabGen: "🏷️ Kreador",
+        pdfDesc: "Mira nos revista di reseta",
         genDesc: "Generá i imprimi etiketa di QR pa produkto òf temporada",
         presetsLabel: "Produkto:",
         seasonPresetsLabel: "Kódigo di Temporada:",
@@ -342,7 +359,9 @@
         catConservation: "Konserve / Saklama",
         ingLabel: "Malzemeler:",
         tabScan: "📷 Tara",
+        tabPdf: "📄 Dergi",
         tabGen: "🏷️ Oluşturucu",
+        pdfDesc: "Topluluk tarif dergimize göz atın",
         genDesc: "Ürünler veya mevsimlik afişler için QR kod etiketleri oluşturun",
         presetsLabel: "Ürünler:",
         seasonPresetsLabel: "Mevsim QR Kodları:",
@@ -375,7 +394,9 @@
         catConservation: "حفظ وتخزين",
         ingLabel: "المكونات:",
         tabScan: "📷 مسح",
+        tabPdf: "📄 المجلة",
         tabGen: "🏷️ مولد الرموز",
+        pdfDesc: "تصفح مجلة وصفات المجتمع",
         genDesc: "إنشاء وطباعة ملصقات QR للمنتجات أو الملصقات الموسمية",
         presetsLabel: "منتجات سريعة:",
         seasonPresetsLabel: "رموز المواسم:",
@@ -408,7 +429,9 @@
         catConservation: "تصويب وتخزين",
         ingLabel: "المقادير:",
         tabScan: "📷 سكاني",
+        tabPdf: "📄 المجلة",
         tabGen: "🏷️ توليد الكود",
+        pdfDesc: "تصفح المجلة ديال الوصفات",
         genDesc: "صاوب وطبع ليزيكيت د QR للخضرة أو الفصول",
         presetsLabel: "خضرة جاهزة:",
         seasonPresetsLabel: "كودات الفصول:",
@@ -515,6 +538,7 @@
 
       document.getElementById("t-app-subtitle").innerText = t.appSubtitle;
       document.getElementById("t-app-desc").innerText = t.appDesc;
+      document.getElementById("t-pdf-desc").innerText = t.pdfDesc;
       document.getElementById("t-browse-season").innerText = t.browseSeason;
       document.getElementById("t-btn-scan-again").innerText = t.btnScanAgain;
       document.getElementById("t-btn-propose").innerText = t.btnPropose;
@@ -528,6 +552,7 @@
       document.getElementById("t-btn-cancel").innerText = t.btnCancel;
       document.getElementById("t-btn-submit").innerText = t.btnSubmit;
       document.getElementById("tabScannerBtn").innerText = t.tabScan;
+      document.getElementById("tabPdfBtn").innerText = t.tabPdf;
       document.getElementById("tabGeneratorBtn").innerText = t.tabGen;
       document.getElementById("t-gen-desc").innerText = t.genDesc;
       document.getElementById("t-presets-label").innerText = t.presetsLabel;
@@ -549,20 +574,30 @@
 
     function switchTab(tab) {
       const scannerView = document.getElementById("viewScanner");
+      const pdfView = document.getElementById("viewPdf");
       const generatorView = document.getElementById("viewGenerator");
+      
       const scanBtn = document.getElementById("tabScannerBtn");
+      const pdfBtn = document.getElementById("tabPdfBtn");
       const genBtn = document.getElementById("tabGeneratorBtn");
+
+      scannerView.classList.add("hidden");
+      pdfView.classList.add("hidden");
+      generatorView.classList.add("hidden");
+
+      scanBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md text-slate-600 transition";
+      pdfBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md text-slate-600 transition";
+      genBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md text-slate-600 transition";
 
       if (tab === 'scanner') {
         scannerView.classList.remove("hidden");
-        generatorView.classList.add("hidden");
-        scanBtn.className = "text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
-        genBtn.className = "text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition";
+        scanBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
+      } else if (tab === 'pdf') {
+        pdfView.classList.remove("hidden");
+        pdfBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
       } else {
-        scannerView.classList.add("hidden");
         generatorView.classList.remove("hidden");
-        genBtn.className = "text-xs font-semibold px-3 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
-        scanBtn.className = "text-xs font-semibold px-3 py-1 rounded-md text-slate-600 transition";
+        genBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
         
         if (!qrCodeInst) {
           qrCodeInst = new QRCode(document.getElementById("qrcode"), {
