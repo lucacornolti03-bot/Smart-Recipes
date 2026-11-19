@@ -12,6 +12,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- PapaParse for Live Google Sheet CSV Parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- PDF.js for Reliable Multi-Page Mobile & Desktop Viewing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center p-4 transition-all">
 
@@ -94,8 +96,17 @@
     <!-- ================= VIEW 2: PDF / ZINE VIEWER ================= -->
     <div id="viewPdf" class="hidden">
       <p id="t-pdf-desc" class="text-sm text-slate-500 mb-3 text-center">Browse our community recipe zine</p>
-      <div class="w-full h-[520px] border border-slate-200 rounded-xl overflow-hidden bg-slate-100 shadow-inner">
-        <iframe src="Group 6 Zine.pdf#view=FitH" class="w-full h-full" frameborder="0"></iframe>
+
+      <div class="flex justify-end mb-2">
+        <a id="t-pdf-open-link" href="Group 6 Zine.pdf" target="_blank" rel="noopener noreferrer"
+           class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+          ↗ Open full PDF
+        </a>
+      </div>
+
+      <div id="pdf-pages-container"
+           class="w-full max-h-[520px] overflow-y-auto space-y-3 border border-slate-200 rounded-xl p-3 bg-slate-100 shadow-inner">
+        <p id="pdf-loading-msg" class="text-xs text-slate-500 text-center py-6">Loading zine pages...</p>
       </div>
     </div>
 
@@ -191,6 +202,7 @@
   <script>
     // Live Google Sheet CSV URL (Recipes Tab)
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSS7sjIW99RD6dxh1SOhFLHvkHfIJsI-nLhQUINCK_B99Xva6OQDVX85BFeaUIKp48Zvejj4d2I5bIr/pub?gid=0&single=true&output=csv";
+    const PDF_FILE_URL = "Group 6 Zine.pdf";
 
     // Interface Translations Dictionary (7 Languages)
     const translations = {
@@ -222,6 +234,8 @@
         tabPdf: "📄 Zine",
         tabGen: "🏷️ Generator",
         pdfDesc: "Browse our community recipe zine",
+        pdfOpenLink: "↗ Open full PDF",
+        pdfLoading: "Loading zine pages...",
         genDesc: "Generate and print QR code labels for produce or seasonal posters",
         presetsLabel: "Produce Presets:",
         seasonPresetsLabel: "Seasonal QR Codes:",
@@ -257,6 +271,8 @@
         tabPdf: "📄 Zine",
         tabGen: "🏷️ Generator",
         pdfDesc: "Blader door ons receptenmagazine",
+        pdfOpenLink: "↗ Open volledige PDF",
+        pdfLoading: "Zine-pagina's laden...",
         genDesc: "Genereer en print QR-code labels voor producten of seizoensposters",
         presetsLabel: "Producten:",
         seasonPresetsLabel: "Seizoens QR-codes:",
@@ -292,6 +308,8 @@
         tabPdf: "📄 Zine",
         tabGen: "🏷️ Generator",
         pdfDesc: "Przeglądaj nasz biuletyn z przepisami",
+        pdfOpenLink: "↗ Otwórz pełny PDF",
+        pdfLoading: "Ładowanie stron...",
         genDesc: "Wygeneruj i wydrukuj etykiety QR dla produktów lub plakatów sezonowych",
         presetsLabel: "Produkty:",
         seasonPresetsLabel: "Kody sezonowe:",
@@ -327,6 +345,8 @@
         tabPdf: "📄 Zine",
         tabGen: "🏷️ Kreador",
         pdfDesc: "Mira nos revista di reseta",
+        pdfOpenLink: "↗ Habri PDF kompleto",
+        pdfLoading: "Cargando página...",
         genDesc: "Generá i imprimi etiketa di QR pa produkto òf temporada",
         presetsLabel: "Produkto:",
         seasonPresetsLabel: "Kódigo di Temporada:",
@@ -362,6 +382,8 @@
         tabPdf: "📄 Dergi",
         tabGen: "🏷️ Oluşturucu",
         pdfDesc: "Topluluk tarif dergimize göz atın",
+        pdfOpenLink: "↗ Tam PDF'yi aç",
+        pdfLoading: "Sayfalar yükleniyor...",
         genDesc: "Ürünler veya mevsimlik afişler için QR kod etiketleri oluşturun",
         presetsLabel: "Ürünler:",
         seasonPresetsLabel: "Mevsim QR Kodları:",
@@ -397,6 +419,8 @@
         tabPdf: "📄 المجلة",
         tabGen: "🏷️ مولد الرموز",
         pdfDesc: "تصفح مجلة وصفات المجتمع",
+        pdfOpenLink: "↗ فتح ملف PDF الكامل",
+        pdfLoading: "جاري تحميل الصفحات...",
         genDesc: "إنشاء وطباعة ملصقات QR للمنتجات أو الملصقات الموسمية",
         presetsLabel: "منتجات سريعة:",
         seasonPresetsLabel: "رموز المواسم:",
@@ -432,6 +456,8 @@
         tabPdf: "📄 المجلة",
         tabGen: "🏷️ توليد الكود",
         pdfDesc: "تصفح المجلة ديال الوصفات",
+        pdfOpenLink: "↗ حل الـ PDF كامل",
+        pdfLoading: "كيتشارجاو الصفحات...",
         genDesc: "صاوب وطبع ليزيكيت د QR للخضرة أو الفصول",
         presetsLabel: "خضرة جاهزة:",
         seasonPresetsLabel: "كودات الفصول:",
@@ -459,6 +485,7 @@
     let currentLang = "en";
     let activeFilter = { type: null, value: "" };
     let qrCodeInst = null;
+    let pdfRendered = false;
 
     const seasonIcons = {
       Spring: "🌸",
@@ -539,6 +566,9 @@
       document.getElementById("t-app-subtitle").innerText = t.appSubtitle;
       document.getElementById("t-app-desc").innerText = t.appDesc;
       document.getElementById("t-pdf-desc").innerText = t.pdfDesc;
+      document.getElementById("t-pdf-open-link").innerText = t.pdfOpenLink;
+      const loadingMsg = document.getElementById("pdf-loading-msg");
+      if (loadingMsg) loadingMsg.innerText = t.pdfLoading;
       document.getElementById("t-browse-season").innerText = t.browseSeason;
       document.getElementById("t-btn-scan-again").innerText = t.btnScanAgain;
       document.getElementById("t-btn-propose").innerText = t.btnPropose;
@@ -572,6 +602,55 @@
       }
     }
 
+    async function renderZinePdf() {
+      if (pdfRendered) return;
+      pdfRendered = true;
+
+      const container = document.getElementById("pdf-pages-container");
+      const encodedPdfUrl = encodeURI(PDF_FILE_URL);
+
+      if (!window.pdfjsLib) {
+        container.innerHTML = `<iframe src="${encodedPdfUrl}" class="w-full h-[480px] rounded-lg" frameborder="0"></iframe>`;
+        return;
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+      try {
+        const loadingTask = pdfjsLib.getDocument(encodedPdfUrl);
+        const pdf = await loadingTask.promise;
+        container.innerHTML = "";
+
+        const containerWidth = Math.max(container.clientWidth - 24, 260);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const unscaledViewport = page.getViewport({ scale: 1 });
+          const displayScale = containerWidth / unscaledViewport.width;
+          const displayViewport = page.getViewport({ scale: displayScale });
+          const renderViewport = page.getViewport({ scale: displayScale * dpr });
+
+          const canvas = document.createElement("canvas");
+          canvas.className = "w-full rounded-lg shadow-sm bg-white block";
+          canvas.style.width = `${displayViewport.width}px`;
+          canvas.style.height = `${displayViewport.height}px`;
+          canvas.width = renderViewport.width;
+          canvas.height = renderViewport.height;
+
+          container.appendChild(canvas);
+          await page.render({
+            canvasContext: canvas.getContext("2d"),
+            viewport: renderViewport
+          }).promise;
+        }
+      } catch (err) {
+        console.warn("PDF.js render error, falling back to iframe:", err);
+        container.innerHTML = `<iframe src="${encodedPdfUrl}" class="w-full h-[480px] rounded-lg" frameborder="0"></iframe>`;
+      }
+    }
+
     function switchTab(tab) {
       const scannerView = document.getElementById("viewScanner");
       const pdfView = document.getElementById("viewPdf");
@@ -595,6 +674,7 @@
       } else if (tab === 'pdf') {
         pdfView.classList.remove("hidden");
         pdfBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
+        renderZinePdf();
       } else {
         generatorView.classList.remove("hidden");
         genBtn.className = "text-xs font-semibold px-2.5 py-1 rounded-md bg-white text-emerald-700 shadow-sm transition";
